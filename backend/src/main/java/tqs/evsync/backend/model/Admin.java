@@ -1,5 +1,9 @@
 package tqs.evsync.backend.model;
 
-public class Admin extends User{
+import jakarta.persistence.*;
+
+@Entity
+@DiscriminatorValue("ADMIN")
+public class Admin extends User {
     
 }

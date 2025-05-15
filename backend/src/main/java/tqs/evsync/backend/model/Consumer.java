@@ -1,33 +1,30 @@
 package tqs.evsync.backend.model;
 
 import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 
 @Entity
+@DiscriminatorValue("CONSUMER")
 public class Consumer extends User {
-    
-    private int wallet = 0;
+	private int wallet = 0;
 
-    @JsonIgnore
-    @OneToMany(mappedBy = "consumer")
-    private List<Reservation> reservations;
+	@JsonIgnore
+	@OneToMany(mappedBy = "consumer")
+	private List<Reservation> reservations;
 
-    public int getWallet() {
-        return wallet;
-    }
-    public List<Reservation> getReservations() {
-        return reservations;
-    }
+	public int getWallet() {
+		return wallet;
+	}
+	public List<Reservation> getReservations() {
+		return reservations;
+	}
 
-    public void setWallet(int wallet) {
-        this.wallet = wallet;
-    }
-    public void setReservations(List<Reservation> reservations) {
-        this.reservations = reservations;
-    }
-
+	public void setWallet(int wallet) {
+		this.wallet = wallet;
+	}
+	public void setReservations(List<Reservation> reservations) {
+		this.reservations = reservations;
+	}
+	
 }
