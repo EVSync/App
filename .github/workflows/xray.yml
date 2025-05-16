@@ -1,0 +1,2 @@
+- name: xray-action
+  uses: mikepenz/xray-action@v3
