@@ -1,2 +1,48 @@
-- name: xray-action
-  uses: mikepenz/xray-action@v3
+            - name: xray-action
+  # You may pin to the exact commit or the version.
+  # uses: mikepenz/xray-action@dcc92ffa4c1f00b05c80af54a3510422a4143bee
+  uses: mikepenz/xray-action@v3.2.0-rc01
+  with:
+    # Defines which variant of Xray to target at [cloud vs Server/DC]
+    xrayCloud: # optional, default is true
+    # Defines the base URL for Xray Server/DC, could be used to change XRay Data region for XRay Cloud (required if xrayCloud="false")
+    xrayBaseUrl: # optional
+    # Xray API client id (cloud) or Jira username (Server/DC). (Required for xrayCoud)
+    username: # optional
+    # Xray API client secret (cloud) or Jira password (Server/DC). (Required for xrayCoud)
+    password: # optional
+    # Xray Personal Access Token. If provided username/password are ignored. (Xray Server/DC only)
+    xrayToken: # optional
+    # A `glob` pattern, to find all test results which should get imported.
+    testPaths: # default is **/test-results/test/TEST-*.xml
+    # When multiple test reports are found, they will be automatically merged into a single test report file. Only supported for: ["junit"]
+    testMerge: # optional, default is true
+    # The format of the to be imported data. ["xray", "cucumber", "behave", "junit", "testng", "nunit", "xunit", "robot", "bundle"].
+    testFormat: # optional, default is junit
+    # Key of the Test Execution.
+    testExecKey: 
+    # Key of the project where the Test Execution (if the testExecKey parameter was not provided) and the tests (if they are not created yet) are going to be created.
+    projectKey: 
+    # Key of the Test Plan; if you specify the Test Plan, the Tests will be added automatically to the Test Plan if they are not part of it.
+    testPlanKey: # optional
+    # A string containing a list of test environments separated by ";".
+    testEnvironments: # optional
+    # Source code and documentation version used in the test execution.
+    revision: # optional
+    # The Fix Version associated with the test execution (it supports only one value).
+    fixVersion: # optional
+    # If no `testExecKey` is provided, it will generate a testExec with the first import, and reuse the same for all other imports.
+    combineInSingleTestExec: # optional, default is false
+    # Defines if the action should fail if an import error occurred.
+    failOnImportError: # optional, default is false
+    # Defines if the action should continue after a single import error occurred.
+    continueOnImportError: # optional, default is true
+    # Specifies the level of parallelism to import to Xray.
+    importParallelism: # optional, default is 2
+    # Specifies the maximum duration for a request (in milliseconds) to wait for a response to execute before timing out. The default is 60 seconds.
+    responseTimeout: # optional, default is 60000
+    # Links to a json file, defining the meta information to create the test execution ticket.
+    testExecutionJson: # optional
+    # Links to a json file, defining the meta information to create the test tickets.
+    testJson: # optional
+          
