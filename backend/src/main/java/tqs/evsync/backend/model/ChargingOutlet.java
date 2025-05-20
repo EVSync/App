@@ -6,7 +6,7 @@ import jakarta.persistence.Entity;
 public class ChargingOutlet {
         private Long id;
         private double costPerHour;
-	private int maxPower;
+		private int maxPower;
 
 	public Long getId() {
 	    	return id;

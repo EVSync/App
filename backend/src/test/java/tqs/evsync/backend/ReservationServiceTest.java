@@ -2,6 +2,7 @@ package tqs.evsync.backend;
 
 import org.junit.jupiter.api.Test;
 import tqs.evsync.backend.model.*;
+import tqs.evsync.backend.model.enums.ReservationStatus;
 import tqs.evsync.backend.repository.*;
 import tqs.evsync.backend.service.ReservationService;
 

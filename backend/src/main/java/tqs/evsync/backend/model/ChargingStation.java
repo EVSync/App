@@ -2,18 +2,20 @@ package tqs.evsync.backend.model;
 
 import java.util.List;
 
+import tqs.evsync.backend.model.enums.ChargingStationStatus;
+
 import jakarta.persistence.*;
 
 public class ChargingStation {
 	private Long id;
 	private Double latitude;
 	private Double longitude;
+	private ChargingStationStatus status;
 
 	@ManyToOne()
 	@JoinColumn(name = "operator_id")
 	private Operator operator;
 	
-	@OneToMany()
 	private List<ChargingOutlet> chargingOutlets;
 
 	public Long getId() {
@@ -39,5 +41,24 @@ public class ChargingStation {
 	}
 	public void setOperator(Operator operator) {
 		this.operator = operator;
+	}
+	public ChargingStationStatus getStatus() {
+		return status;
+	}
+    public void setStatus(ChargingStationStatus status) {
+        this.status = status;
+    }
+	public List<ChargingOutlet> getChargingOutlets() {
+		return chargingOutlets;
+	}
+	public void setChargingOutlets(List<ChargingOutlet> chargingOutlets) {
+		this.chargingOutlets = chargingOutlets;
+	}
+	public void addChargingOutlet(ChargingOutlet chargingOutlet) {
+		this.chargingOutlets.add(chargingOutlet);
+	}
+
+	public void removeChargingOutlet(ChargingOutlet chargingOutlet) {
+		this.chargingOutlets.remove(chargingOutlet);
 	}
 }

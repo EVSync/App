@@ -3,6 +3,7 @@ package tqs.evsync.backend.service;
 import org.springframework.stereotype.Service;
 import tqs.evsync.backend.model.*;
 import tqs.evsync.backend.repository.*;
+import tqs.evsync.backend.model.enums.ReservationStatus;
 
 import java.util.Optional;
 
