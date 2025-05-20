@@ -2,6 +2,8 @@ package tqs.evsync.backend.model;
 
 import jakarta.persistence.*;
 
+import tqs.evsync.backend.model.enums.ReservationStatus;
+
 @Entity
 public class Reservation {
 

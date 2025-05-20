@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import tqs.evsync.backend.model.ChargingOutlet;
 import tqs.evsync.backend.model.ChargingStation;
-import tqs.evsync.backend.model.ChargingStationStatus;
+import tqs.evsync.backend.model.enums.ChargingStationStatus;
 import tqs.evsync.backend.service.ChargingStationService;
 
 @Controller

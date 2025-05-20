@@ -1,4 +1,4 @@
-package tqs.evsync.backend.model;
+package tqs.evsync.backend.model.enums;
 
 public enum ReservationStatus {
 	PENDING,	// The reservation is pending confirmation, needs to be payed

@@ -1,4 +1,4 @@
-package tqs.evsync.backend.model;
+package tqs.evsync.backend.model.enums;
 
 public enum ChargingStationStatus {
     AVAILABLE,

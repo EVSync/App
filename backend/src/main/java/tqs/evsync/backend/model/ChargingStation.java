@@ -2,6 +2,8 @@ package tqs.evsync.backend.model;
 
 import java.util.List;
 
+import tqs.evsync.backend.model.enums.ChargingStationStatus;
+
 import jakarta.persistence.*;
 
 public class ChargingStation {

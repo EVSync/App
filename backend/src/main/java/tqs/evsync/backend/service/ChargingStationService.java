@@ -5,12 +5,11 @@ import org.springframework.stereotype.Service;
 
 import tqs.evsync.backend.model.ChargingOutlet;
 import tqs.evsync.backend.model.ChargingStation;
-import tqs.evsync.backend.model.ChargingStationStatus;
 import tqs.evsync.backend.repository.ChargingOutletRepository;
 import tqs.evsync.backend.repository.ChargingStationRepository;
 import tqs.evsync.backend.repository.OperatorRepository;
 import tqs.evsync.backend.model.Operator;
-import tqs.evsync.backend.model.ReservationStatus;
+import tqs.evsync.backend.model.enums.ChargingStationStatus;
 
 import java.util.List;
 
@@ -25,6 +24,12 @@ public class ChargingStationService {
 
     @Autowired
     private ChargingOutletRepository chargingOutletRepo;
+
+    public ChargingStationService(ChargingStationRepository chargingRepo, OperatorRepository operatorRepo, ChargingOutletRepository chargingOutletRepo) {
+        this.chargingRepo = chargingRepo;
+        this.operatorRepo = operatorRepo;
+        this.chargingOutletRepo = chargingOutletRepo;
+    }
 
     public ChargingStation getStationById(Long id) {
         return chargingRepo.findById(id).orElse(null);
