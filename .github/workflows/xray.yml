@@ -1,0 +1,38 @@
+# .github/workflows/xray.yml
+name: Xray Import
+
+on:
+  push:
+    branches:
+      - main    # or whatever branch you want to trigger on
+
+jobs:
+  import-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v3
+
+      - name: Run Xray import
+        uses: mikepenz/xray-action@v3.2.0-rc01
+        with:
+          # Set to "false" if you’re targeting Xray Server/DC
+          xrayCloud: true
+          # Required if xrayCloud: false, or to override cloud region:
+          # xrayBaseUrl: https://your-xray-instance.example.com
+          # Credentials—use secrets in your repo settings!
+          username: ${{ secrets.XRAY_CLIENT_ID }}
+          password: ${{ secrets.XRAY_CLIENT_SECRET }}
+          # Glob pattern to find your test-report files
+          testPaths: '**/test-results/test/TEST-*.xml'
+          # Format of the reports you’re importing
+          testFormat: junit
+          # Either provide an existing Test Execution key or let it create one:
+          # testExecKey: XRAY-123
+          projectKey: YOUR_PROJECT_KEY
+          # (Optional values—remove any you don’t need)
+          # testPlanKey: YOUR_PLAN_KEY
+          # testEnvironments: 'staging;production'
+          # combineInSingleTestExec: false
+          # failOnImportError: false
