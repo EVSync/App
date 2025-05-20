@@ -1,10 +1,14 @@
 package tqs.evsync.backend.model;
 
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 
 @Entity
 public class ChargingOutlet {
+
+		@Id
+		@GeneratedValue(strategy = GenerationType.IDENTITY)
         private Long id;
+		
         private double costPerHour;
 		private int maxPower;
 

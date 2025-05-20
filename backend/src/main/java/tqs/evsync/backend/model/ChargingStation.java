@@ -1,22 +1,30 @@
 package tqs.evsync.backend.model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import tqs.evsync.backend.model.enums.ChargingStationStatus;
 
 import jakarta.persistence.*;
 
+@Entity
 public class ChargingStation {
+	@Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+
 	private Double latitude;
 	private Double longitude;
 	private ChargingStationStatus status;
+
+	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "station_id") 
+    private List<ChargingOutlet> outlets = new ArrayList<>();
 
 	@ManyToOne()
 	@JoinColumn(name = "operator_id")
 	private Operator operator;
 	
-	private List<ChargingOutlet> chargingOutlets;
 
 	public Long getId() {
 		return id;
@@ -49,16 +57,16 @@ public class ChargingStation {
         this.status = status;
     }
 	public List<ChargingOutlet> getChargingOutlets() {
-		return chargingOutlets;
+		return outlets;
 	}
 	public void setChargingOutlets(List<ChargingOutlet> chargingOutlets) {
-		this.chargingOutlets = chargingOutlets;
+		this.outlets = chargingOutlets;
 	}
 	public void addChargingOutlet(ChargingOutlet chargingOutlet) {
-		this.chargingOutlets.add(chargingOutlet);
+		this.outlets.add(chargingOutlet);
 	}
 
 	public void removeChargingOutlet(ChargingOutlet chargingOutlet) {
-		this.chargingOutlets.remove(chargingOutlet);
+		this.outlets.remove(chargingOutlet);
 	}
 }

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -90,7 +91,7 @@ public class ChargingStationController {
     // These endpoints are for the ADMIN to create and delete the charging stations
     // POST ENDPOINTS
     @PostMapping
-    public ResponseEntity<?> addChargingStation(ChargingStation chargingStation) {
+    public ResponseEntity<?> addChargingStation(@RequestBody ChargingStation chargingStation) {
         ChargingStation savedStation = chargingStationService.addChargingStation(chargingStation);
         return ResponseEntity.ok(savedStation);
     }

@@ -3,6 +3,7 @@ package tqs.evsync.backend.model;
 import jakarta.persistence.*;
 
 @Entity
+@Table(name = "app_user")
 @Inheritance(strategy = InheritanceType.JOINED) 
 @DiscriminatorColumn(name = "user_type")
 public class User {
