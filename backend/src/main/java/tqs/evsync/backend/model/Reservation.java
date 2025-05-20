@@ -21,6 +21,14 @@ public class Reservation {
     @JoinColumn(name = "consumer_id")
     private Consumer consumer;
 
+    @ManyToOne
+    @JoinColumn(name = "station_id")
+    private ChargingStation station;
+
+    @ManyToOne
+    @JoinColumn(name = "outlet_id")
+    private ChargingOutlet outlet;
+
     public Long getId() {
         return id;
     }
@@ -41,6 +49,14 @@ public class Reservation {
         return status;
     }
 
+    public ChargingStation getStation() {
+        return station;
+    }
+
+    public ChargingOutlet getOutlet() {
+        return outlet;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -59,5 +75,13 @@ public class Reservation {
 
     public void setStatus(ReservationStatus status) {
         this.status = status;
+    }
+
+    public void setStation(ChargingStation station) {
+        this.station = station;
+    }
+
+    public void setOutlet(ChargingOutlet outlet) {
+        this.outlet = outlet;
     }
 }

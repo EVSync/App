@@ -41,7 +41,8 @@ public class ChargingStationService {
 
     public List<ChargingStation> getStationsNear(double lat, double lon, double maxDistanceKm) {
         return chargingRepo.findAll().stream()
-                .filter(s -> distanceKm(lat, lon, s.getLatitude(), s.getLongitude()) <= maxDistanceKm)
+                .filter(s -> distanceKm(lat, lon, s.getLatitude(), s.getLongitude()) <= maxDistanceKm) //filter by distance
+                .filter(s -> s.getStatus() == ChargingStationStatus.AVAILABLE) //filter by availability
                 .toList();
     }
 
