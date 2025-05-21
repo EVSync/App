@@ -15,6 +15,7 @@ import java.util.List;
 
 @Service
 public class ChargingStationService {
+    private static final double EARTH_RADIUS_KM = 6378.0;
 
     @Autowired
     private ChargingStationRepository chargingRepo;
@@ -47,7 +48,15 @@ public class ChargingStationService {
     }
 
     private double distanceKm(double lat1, double lon1, double lat2, double lon2) {
-        return Math.sqrt(Math.pow(lat1 - lat2, 2) + Math.pow(lon1 - lon2, 2)) * 111;
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        
+        double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+        
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return EARTH_RADIUS_KM * c;
     }
 
     public List<ChargingStation> getStationsByOperator(Long operatorId) {
