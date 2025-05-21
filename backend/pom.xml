@@ -141,6 +141,12 @@
 			<artifactId>assertj-core</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+  <groupId>app.getxray</groupId>
+  <artifactId>xray-maven-plugin</artifactId>
+  <version>0.9.0</version>
+  <scope>test</scope>
+</dependency>
 
 	</dependencies>
 
@@ -150,6 +156,20 @@
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			<plugin>
+            	<groupId>app.getxray</groupId>
+            	<artifactId>xray-maven-plugin</artifactId>
+            	<version>0.9.0</version>
+            	<configuration>
+					<clientId>215FFD69FE46447280000000000</clientId>
+					<clientSecret>1c00f8f22f56a8684d7c18cd61470000000</clientSecret>
+					<cloud>true</cloud>
+					<projectKey>CALC</projectKey>
+					<fixVersion>1.0</fixVersion>
+					<reportFormat>junit</reportFormat>
+					<reportFile>target/junit.xml</reportFile>
+            	</configuration>
+        	</plugin>
 		</plugins>
 	</build>
 
