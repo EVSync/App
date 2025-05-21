@@ -51,13 +51,7 @@ public class ChargingSession {
     }
 
     public double getTotalCost() {
-        if (startTime == null || endTime == null) {
-            return 0.0;
-        }
-        
-        long seconds = Duration.between(startTime, endTime).getSeconds();
-        double hours = seconds / 3600.0;
-        return hours * outlet.getCostPerHour();
+        return totalCost;
     }
 
     public ChargingOutlet getOutlet() {
@@ -89,7 +83,13 @@ public class ChargingSession {
     }
 
     public void calculateTotalCost(double costPerKWh) {
-        this.totalCost = this.energyConsumed * costPerKWh;
+        if (startTime == null || endTime == null) {
+            this.totalCost = 0.0;
+        }
+        
+        long seconds = Duration.between(startTime, endTime).getSeconds();
+        double hours = seconds / 3600.0;
+        this.totalCost = hours * outlet.getCostPerHour();
     }
 
     public void setOutlet(ChargingOutlet outlet) {
