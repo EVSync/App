@@ -34,7 +34,6 @@ class OpenStreetMapServiceTest {
     private final double testLat = 38.736946;
     private final double testLon = -9.142685;
 
-    // Test DTOs
     private OpenStreetMapService.GeocodingResponse geocodingResponse;
     private OpenStreetMapService.ReverseGeocodingResponse reverseGeocodingResponse;
 
@@ -54,7 +53,6 @@ class OpenStreetMapServiceTest {
 
     @Test
     void geocode_ValidAddress_ReturnsCoordinates() {
-        // Mock REST call
         when(restTemplate.getForEntity(anyString(), eq(OpenStreetMapService.GeocodingResponse[].class)))
             .thenReturn(new ResponseEntity<>(new OpenStreetMapService.GeocodingResponse[]{geocodingResponse}, HttpStatus.OK));
 
