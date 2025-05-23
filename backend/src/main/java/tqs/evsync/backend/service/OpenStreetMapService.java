@@ -45,19 +45,19 @@ public class OpenStreetMapService {
     }
 
     // Encode URL parameters
-    private String encodeUrl(String input) {
+    public String encodeUrl(String input) {
         return URLEncoder.encode(input, StandardCharsets.UTF_8);
     }
 
     // DTOs for OSM API responses
     @Getter @Setter
-    private static class GeocodingResponse {
+    public static class GeocodingResponse {
         private String lat;
         private String lon;
     }
 
     @Getter @Setter
-    private static class ReverseGeocodingResponse {
+    public static class ReverseGeocodingResponse {
         private String displayName;
     }
 
