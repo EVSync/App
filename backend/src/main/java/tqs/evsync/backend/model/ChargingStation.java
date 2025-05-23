@@ -3,12 +3,18 @@ package tqs.evsync.backend.model;
 import java.util.ArrayList;
 import java.util.List;
 
+
 import tqs.evsync.backend.model.enums.ChargingStationStatus;
 
 import jakarta.persistence.*;
 
+@Entity
 public class ChargingStation {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
+	
 	private Double latitude;
 	private Double longitude;
 	private ChargingStationStatus status;

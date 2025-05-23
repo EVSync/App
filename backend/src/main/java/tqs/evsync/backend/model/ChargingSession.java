@@ -2,6 +2,7 @@ package tqs.evsync.backend.model;
 
 import java.time.LocalDateTime;
 
+import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -11,6 +12,7 @@ import jakarta.persistence.ManyToOne;
 import java.time.Duration;
 import tqs.evsync.backend.model.enums.ChargingSessionStatus;
 
+@Entity
 public class ChargingSession {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
