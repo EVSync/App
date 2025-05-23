@@ -26,9 +26,7 @@ public class Reservation {
     @JoinColumn(name = "consumer_id")
     private Consumer consumer;
 
-    @ManyToOne
-    @JoinColumn(name = "station_id")
-    private ChargingStation station;
+
 
     @ManyToOne
     @JoinColumn(name = "outlet_id")
