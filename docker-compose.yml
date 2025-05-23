@@ -1,0 +1,53 @@
+services:
+  frontend:
+    build:
+      context: ./frontend/evsync
+      dockerfile: ../Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/evsync:/app
+    environment:
+      - NODE_ENV=development
+
+
+  mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE:   mydb
+      MYSQL_USER:       myuser
+      MYSQL_PASSWORD:   mypass
+      MYSQL_ROOT_PASSWORD: rootpass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+  backend:
+    build:
+      context: ./backend       
+      dockerfile: Dockerfile
+    ports:
+      - "6000:6000"
+    environment:
+      # tell Spring Boot to use the mysql service:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/mydb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      - SPRING_DATASOURCE_USERNAME=myuser
+      - SPRING_DATASOURCE_PASSWORD=mypass
+      # auto-create/update tables (dev only)
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - SPRING_JPA_DATABASE-PLATFORM=org.hibernate.dialect.MySQL8Dialect
+      - SPRING_DATASOURCE_DRIVER-CLASS-NAME=com.mysql.cj.jdbc.Driver
+    depends_on:
+        mysql:
+          condition: service_healthy
+
+volumes:
+  mysql-data:
+    

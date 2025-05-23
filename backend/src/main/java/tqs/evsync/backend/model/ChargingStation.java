@@ -3,14 +3,17 @@ package tqs.evsync.backend.model;
 import java.util.ArrayList;
 import java.util.List;
 
+
 import tqs.evsync.backend.model.enums.ChargingStationStatus;
 
 import jakarta.persistence.*;
 
 @Entity
 public class ChargingStation {
+
+
 	@Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	private Double latitude;
@@ -25,6 +28,10 @@ public class ChargingStation {
 	@JoinColumn(name = "operator_id")
 	private Operator operator;
 	
+
+	@OneToMany(mappedBy = "chargingStation", cascade = CascadeType.ALL, orphanRemoval = true)
+	private List<ChargingOutlet> chargingOutlets= new ArrayList<>();
+
 
 	public Long getId() {
 		return id;

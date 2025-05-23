@@ -42,6 +42,11 @@ public class ChargingStationController {
         return ResponseEntity.ok(chargingStationService.getStationsNear(lat, lon, maxDistanceKm));
     }
 
+    @GetMapping("/available-nearby")
+    public ResponseEntity<?> getAvailableChargingStationsNearby(@PathVariable double lat,@PathVariable double lon,@PathVariable double maxDistanceKm) {
+        return ResponseEntity.ok(chargingStationService.getAvailableStationsNear(lat, lon, maxDistanceKm));
+    }
+
     @GetMapping("operator/{operatorId}")
     public ResponseEntity<?> getChargingStationsByOperator(@PathVariable Long operatorId) {
         List<ChargingStation> stations = chargingStationService.getStationsByOperator(operatorId);
