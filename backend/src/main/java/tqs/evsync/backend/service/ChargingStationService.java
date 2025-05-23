@@ -8,6 +8,7 @@ import tqs.evsync.backend.model.ChargingStation;
 import tqs.evsync.backend.repository.ChargingOutletRepository;
 import tqs.evsync.backend.repository.ChargingStationRepository;
 import tqs.evsync.backend.repository.OperatorRepository;
+import tqs.evsync.backend.service.OpenStreetMapService.Coordinates;
 import tqs.evsync.backend.model.Operator;
 import tqs.evsync.backend.model.enums.ChargingStationStatus;
 
@@ -26,6 +27,9 @@ public class ChargingStationService {
     @Autowired
     private ChargingOutletRepository chargingOutletRepo;
 
+    @Autowired
+    private OpenStreetMapService osmService;
+
     public ChargingStationService(ChargingStationRepository chargingRepo, OperatorRepository operatorRepo, ChargingOutletRepository chargingOutletRepo) {
         this.chargingRepo = chargingRepo;
         this.operatorRepo = operatorRepo;
@@ -40,10 +44,16 @@ public class ChargingStationService {
         return chargingRepo.findAll();
     }
 
+    public List<ChargingStation> getAvailableStationsNear(double lat, double lon, double maxDistanceKm) {
+        return chargingRepo.findAll().stream()
+                .filter(s -> distanceKm(lat, lon, s.getLatitude(), s.getLongitude()) <= maxDistanceKm) 
+                .filter(s -> s.getStatus() == ChargingStationStatus.AVAILABLE) 
+                .toList();
+    }
+
     public List<ChargingStation> getStationsNear(double lat, double lon, double maxDistanceKm) {
         return chargingRepo.findAll().stream()
-                .filter(s -> distanceKm(lat, lon, s.getLatitude(), s.getLongitude()) <= maxDistanceKm) //filter by distance
-                .filter(s -> s.getStatus() == ChargingStationStatus.AVAILABLE) //filter by availability
+                .filter(s -> distanceKm(lat, lon, s.getLatitude(), s.getLongitude()) <= maxDistanceKm)
                 .toList();
     }
 
@@ -71,9 +81,23 @@ public class ChargingStationService {
 
     public ChargingStation addChargingStation(ChargingStation chargingStation) {
         Operator operator = operatorRepo.findById(chargingStation.getOperator().getId())
-            .orElseThrow(() -> new RuntimeException("Meal with ID " + chargingStation.getOperator().getId() + " not found"));
+            .orElseThrow(() -> new RuntimeException("ChargingStation with ID " + chargingStation.getOperator().getId() + " not found"));
         chargingStation.setOperator(operator);
 
+        return chargingRepo.save(chargingStation);
+    }
+
+    public ChargingStation addChargingStationWithAddress(String address, Long operatorId){
+        Operator operator = operatorRepo.findById(operatorId)
+            .orElseThrow(() -> new RuntimeException("Operator with ID " + operatorId + " not found"));
+        
+        ChargingStation chargingStation = new ChargingStation();
+        Coordinates coordinates = osmService.geocode(address);
+        chargingStation.setLatitude(coordinates.lat());
+        chargingStation.setLongitude(coordinates.lon());
+        chargingStation.setStatus(ChargingStationStatus.AVAILABLE);
+        chargingStation.setOperator(operator);
+        
         return chargingRepo.save(chargingStation);
     }
     
