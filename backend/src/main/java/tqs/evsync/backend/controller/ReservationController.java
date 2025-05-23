@@ -19,11 +19,12 @@ public class ReservationController {
     public ResponseEntity<?> createReservation(
         @RequestParam Long consumerId,
         @RequestParam Long stationId,
+        @RequestParam Long outletId,
         @RequestParam String startTime,
         @RequestParam Double duration
     ) {
         try {
-            Reservation reservation = reservationService.createReservation(consumerId, stationId, startTime, duration);
+            Reservation reservation = reservationService.createReservation(consumerId, stationId,outletId, startTime, duration);
             return ResponseEntity.ok(reservation);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

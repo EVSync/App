@@ -29,21 +29,15 @@ services:
       interval: 5s
       timeout: 10s
       retries: 10
+  
   backend:
-    build:
+    build: 
       context: ./backend       
       dockerfile: Dockerfile
     ports:
-      - "6000:6000"
-    environment:
-      # tell Spring Boot to use the mysql service:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/mydb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      - SPRING_DATASOURCE_USERNAME=myuser
-      - SPRING_DATASOURCE_PASSWORD=mypass
-      # auto-create/update tables (dev only)
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
-      - SPRING_JPA_DATABASE-PLATFORM=org.hibernate.dialect.MySQL8Dialect
-      - SPRING_DATASOURCE_DRIVER-CLASS-NAME=com.mysql.cj.jdbc.Driver
+      - "8080:8080"
+    env_file:
+      - .env
     depends_on:
         mysql:
           condition: service_healthy
