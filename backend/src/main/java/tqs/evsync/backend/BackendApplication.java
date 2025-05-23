@@ -9,7 +9,10 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @SpringBootApplication
 @EnableJpaRepositories(basePackages = "tqs.evsync.backend.repository")
 @EntityScan(basePackages = "tqs.evsync.backend.model")
-@ComponentScan(basePackages = "tqs.evsync.backend")
+@ComponentScan(basePackages = {
+				"tqs.evsync.backend",
+				"tqs.evsync.backend.userStorie1",
+})
 public class BackendApplication {
 
 	public static void main(String[] args) {
