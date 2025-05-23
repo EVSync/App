@@ -46,7 +46,13 @@ public class ReservationService {
         r.setOutlet(outletOpt.get());
 
         return reservationRepo.save(r);
+
     }
+    public Reservation getReservationById(Long id) {
+        return reservationRepo.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+    }
+    
 
     public Reservation confirmReservation(Long reservationId) {
         Reservation r = reservationRepo.findById(reservationId)

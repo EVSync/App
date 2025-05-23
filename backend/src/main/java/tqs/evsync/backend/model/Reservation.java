@@ -13,6 +13,11 @@ public class Reservation {
 
     private String startTime;
     private Double duration;
+    
+    @ManyToOne
+    @JoinColumn(name = "station_id")
+    private ChargingStation station;
+
 
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;

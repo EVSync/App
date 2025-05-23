@@ -1,5 +1,6 @@
 package tqs.evsync.backend.model;
 
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,6 +21,7 @@ public class ChargingOutlet {
     @ManyToOne
     @JoinColumn(name = "charging_station_id")
     private ChargingStation chargingStation;
+
 
 	public Long getId() {
 		return id;
