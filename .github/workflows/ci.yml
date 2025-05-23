@@ -115,3 +115,63 @@ jobs:
             -Dsonar.projectKey=EVSync_App \
             -Dsonar.java.binaries=target/classes \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+
+  it:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact
+          path: backend/target/
+
+      - name: Run integration tests
+        run: mvn verify -DskipUnitTests
+        continue-on-error: true
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: backend/target/failsafe-reports/
+  
+  xray:
+    name: Import Integration Test Results to Xray
+    runs-on: ubuntu-latest
+    needs: it
+    if: always()
+
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download integration test results
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-test-results
+          path: test-results/
+
+      - name: Import results to Xray
+        uses: mikepenz/xray-action@v3.2.0-rc01
+        with:
+          xrayCloud: true
+          username: ${{ secrets.XRAY_CLIENT_ID }}
+          password: ${{ secrets.XRAY_CLIENT_SECRET }}
+          testPaths: 'test-results/TEST-*.xml'
+          testFormat: junit
+          projectKey: TQS
+    
