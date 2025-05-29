@@ -2,11 +2,14 @@ package tqs.evsync.backend.model;
 
 
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import tqs.evsync.backend.model.enums.OutletStatus;
+import jakarta.persistence.EnumType;
 
 @Entity
 public class ChargingOutlet {
@@ -16,6 +19,9 @@ public class ChargingOutlet {
 
     private double costPerHour;
     private int maxPower;
+
+	@Enumerated(EnumType.STRING)
+	private OutletStatus status;
 
 
     @ManyToOne
@@ -51,4 +57,12 @@ public class ChargingOutlet {
     public void setChargingStation(ChargingStation chargingStation) {
         this.chargingStation = chargingStation;
     }
+
+
+	public OutletStatus getStatus() {
+		return status;
+	}
+	public void setStatus(OutletStatus status) {
+		this.status = status;
+	}
 }

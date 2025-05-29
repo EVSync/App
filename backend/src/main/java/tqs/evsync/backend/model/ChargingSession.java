@@ -97,4 +97,12 @@ public class ChargingSession {
     public void setOutlet(ChargingOutlet outlet) {
         this.outlet = outlet;
     }
+
+    public ChargingSessionStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ChargingSessionStatus status) {
+        this.status = status;
+    }
 }
