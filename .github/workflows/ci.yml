@@ -157,6 +157,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: List test results
+        run: ls -R test-results/
+
       - name: Download integration test results
         uses: actions/download-artifact@v4
         with:
