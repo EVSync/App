@@ -1,5 +1,6 @@
 package tqs.evsync.backend.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,9 +17,11 @@ public class ChargingOutlet {
 
     private double costPerHour;
     private int maxPower;
+	private boolean isAvailable = true;
 
 
     @ManyToOne
+	@JsonIgnore
     @JoinColumn(name = "charging_station_id")
     private ChargingStation chargingStation;
 
@@ -51,4 +54,11 @@ public class ChargingOutlet {
     public void setChargingStation(ChargingStation chargingStation) {
         this.chargingStation = chargingStation;
     }
+
+	public boolean isAvailable() {
+		return isAvailable;
+	}
+	public void setAvailable(boolean available) {
+		this.isAvailable = available;
+	}
 }

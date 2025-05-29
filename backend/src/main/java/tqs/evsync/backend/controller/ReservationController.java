@@ -19,12 +19,11 @@ public class ReservationController {
     public ResponseEntity<?> createReservation(
         @RequestParam Long consumerId,
         @RequestParam Long stationId,
-        @RequestParam Long outletId,
         @RequestParam String startTime,
         @RequestParam Double duration
     ) {
         try {
-            Reservation reservation = reservationService.createReservation(consumerId, stationId,outletId, startTime, duration);
+            Reservation reservation = reservationService.createReservation(consumerId, stationId, startTime, duration);
             return ResponseEntity.ok(reservation);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -46,9 +45,12 @@ public class ReservationController {
     @PostMapping("/{id}/confirm")
     public ResponseEntity<?> confirmReservation(@PathVariable Long id) {
         try {
-            return ResponseEntity.ok(reservationService.confirmReservation(id));
+            Reservation confirmed = reservationService.confirmReservation(id);
+            return ResponseEntity.ok(confirmed);
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(402).body("Pagamento falhou: " + e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body("Erro ao confirmar: " + e.getMessage());
         }
     }
 

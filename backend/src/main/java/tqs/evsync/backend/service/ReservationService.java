@@ -7,6 +7,7 @@ import tqs.evsync.backend.model.enums.ReservationStatus;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.List;
 
 @Service
 public class ReservationService {
@@ -23,31 +24,54 @@ public class ReservationService {
         this.outletRepo = o;
     }
 
-    public Reservation createReservation(Long consumerId, Long stationId, Long chargingOutletId, String startTime, Double duration) {
+    public Reservation createReservation(Long consumerId, Long stationId, String startTime, Double duration) {
         Optional<Consumer> consumerOpt = consumerRepo.findById(consumerId);
         Optional<ChargingStation> stationOpt = stationRepo.findById(stationId);
-        Optional<ChargingOutlet> outletOpt = outletRepo.findById(chargingOutletId);
-
-        if (consumerOpt.isEmpty() || stationOpt.isEmpty() || outletOpt.isEmpty()) {
-            throw new IllegalArgumentException("Consumer or Station or Outlet not found.");
+    
+        if (consumerOpt.isEmpty() || stationOpt.isEmpty()) {
+            throw new IllegalArgumentException("Consumer or Station not found.");
         }
-
-        // Check if the reservation time slot is valid
-        if (!isReservationTimeSlotValid(stationId, startTime, duration)) {
-            throw new IllegalArgumentException("Time slot is not available.");
+    
+        ChargingStation station = stationOpt.get();
+        ChargingOutlet selectedOutlet = findAvailableOutlet(station, startTime, duration);
+    
+        if (selectedOutlet == null) {
+            throw new IllegalStateException("No available outlet at the selected time.");
         }
-
+    
         Reservation r = new Reservation();
         r.setConsumer(consumerOpt.get());
         r.setStartTime(startTime);
         r.setDuration(duration);
         r.setStatus(ReservationStatus.PENDING);
-        r.setStation(stationOpt.get());
-        r.setOutlet(outletOpt.get());
-
+        r.setStation(station);
+        r.setOutlet(selectedOutlet);
+    
         return reservationRepo.save(r);
-
     }
+
+    private ChargingOutlet findAvailableOutlet(ChargingStation station, String startTime, Double duration) {
+        LocalDateTime requestedStart = LocalDateTime.parse(startTime);
+        LocalDateTime requestedEnd = requestedStart.plusMinutes((long)(duration * 60));
+    
+        for (ChargingOutlet outlet : station.getChargingOutlets()) {
+            boolean isFree = reservationRepo.findAll().stream()
+                .filter(r -> r.getOutlet() != null && r.getOutlet().getId().equals(outlet.getId()))
+                .noneMatch(r -> {
+                    LocalDateTime existingStart = LocalDateTime.parse(r.getStartTime());
+                    LocalDateTime existingEnd = existingStart.plusMinutes((long)(r.getDuration() * 60));
+                    return requestedStart.isBefore(existingEnd) && requestedEnd.isAfter(existingStart);
+                });
+    
+            if (isFree) {
+                return outlet;
+            }
+        }
+    
+        return null; 
+    }
+    
+    
     public Reservation getReservationById(Long id) {
         return reservationRepo.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
@@ -58,9 +82,25 @@ public class ReservationService {
         Reservation r = reservationRepo.findById(reservationId)
             .orElseThrow(() -> new IllegalArgumentException("Not found"));
     
+        ChargingOutlet outlet = r.getOutlet();
+        if (outlet == null) {
+            throw new IllegalStateException("No outlet associated with this reservation.");
+        }
+    
+        double estimatedCost = r.getDuration() * outlet.getCostPerHour();
+        double reservationFee = estimatedCost * 0.2; 
+        Consumer consumer = r.getConsumer();
+
+        if (consumer.getWallet() < reservationFee) {
+            throw new IllegalStateException("Saldo insuficiente para pagar a taxa de reserva.");
+        }
+        consumer.setWallet(consumer.getWallet() - reservationFee);
+        r.setReservationFee(reservationFee);
         r.setStatus(ReservationStatus.CONFIRMED);
+
         return reservationRepo.save(r);
     }
+    
     
     public Reservation cancelReservation(Long reservationId) {
         Reservation r = reservationRepo.findById(reservationId)
@@ -70,34 +110,8 @@ public class ReservationService {
         return reservationRepo.save(r);
     }
 
-    public Reservation processPayment(Long reservationId, double costPerHour) {
-        Reservation r = reservationRepo.findById(reservationId)
-            .orElseThrow(() -> new IllegalArgumentException("Not found"));
-    
-        Consumer consumer = r.getConsumer();
-        double total = r.getDuration() * costPerHour;
-    
-        if (consumer.getWallet() < total) {
-            throw new IllegalStateException("Saldo insuficiente");
-        }
-    
-        consumer.setWallet((int)(consumer.getWallet() - total));
-        r.setStatus(ReservationStatus.CONFIRMED);
-        return reservationRepo.save(r);
-    }
 
-    public boolean isReservationTimeSlotValid(Long stationId, String startTime, Double duration) {
-        LocalDateTime requestedStart = LocalDateTime.parse(startTime);
-        LocalDateTime requestedEnd = requestedStart.plusMinutes((long)(duration * 60));
-        
-        return reservationRepo.findAllByStationId(stationId).stream()
-            .noneMatch(r -> {
-                LocalDateTime existingStart = LocalDateTime.parse(r.getStartTime());
-                LocalDateTime existingEnd = existingStart.plusMinutes((long)(r.getDuration() * 60));
-                
-                return requestedStart.isBefore(existingEnd) && requestedEnd.isAfter(existingStart);
-            });
-    }
+    
     
     
 }

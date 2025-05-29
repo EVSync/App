@@ -72,7 +72,7 @@ public class ChargingStationController {
         }
     }
     @PutMapping("/{id}/add-charging-outlet")
-    public ResponseEntity<?> addChargingOutlet(@PathVariable Long id, @RequestParam ChargingOutlet chargingOutlet) {
+    public ResponseEntity<?> addChargingOutlet(@PathVariable Long id, @RequestBody ChargingOutlet chargingOutlet) {
         try{
             ChargingStation updatedStation = chargingStationService.addChargingOutlet(id, chargingOutlet);
             return ResponseEntity.ok(updatedStation);
@@ -82,7 +82,7 @@ public class ChargingStationController {
         }
     }
     @PutMapping("/{id}/remove-charging-outlet")
-    public ResponseEntity<?> removeChargingOutlet(@PathVariable Long id, @RequestParam ChargingOutlet chargingOutlet) {
+    public ResponseEntity<?> removeChargingOutlet(@PathVariable Long id, @RequestBody ChargingOutlet chargingOutlet) {
         try{
             ChargingStation updatedStation = chargingStationService.removeChargingOutlet(id, chargingOutlet);
             return ResponseEntity.ok(updatedStation);

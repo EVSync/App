@@ -122,16 +122,15 @@ public class ChargingStationService {
         }
     }
 
-    public ChargingStation addChargingOutlet(Long id, ChargingOutlet chargingOutlet) {
-        ChargingStation chargingStation = chargingRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Charging station with ID = " + id + " not found"));
-        ChargingOutlet checkChargingOutlet = chargingOutletRepo.findById(chargingOutlet.getId())
-            .orElseThrow(() -> new RuntimeException("Charging outlet with ID = " + chargingOutlet.getId() + " not found"));
-
-        chargingStation.addChargingOutlet(checkChargingOutlet);
-        
-        return chargingRepo.save(chargingStation);
+    public ChargingStation addChargingOutlet(Long stationId, ChargingOutlet outlet) {
+        ChargingStation station = chargingRepo.findById(stationId)
+            .orElseThrow(() -> new RuntimeException("Charging station not found"));
+    
+        outlet.setChargingStation(station); 
+        station.addChargingOutlet(outlet);    
+        return chargingRepo.save(station);
     }
+    
 
     public ChargingStation removeChargingOutlet(Long id, ChargingOutlet chargingOutlet) {
         ChargingStation chargingStation = chargingRepo.findById(id)
