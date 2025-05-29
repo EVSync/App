@@ -1,0 +1,39 @@
+name: EVSync Deployment
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: EVSync Deploy
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create .env file with secrets
+        run: |
+          echo "DB_URL=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+
+      - name: Stop previous containers
+        run: docker compose --env-file .env -f docker-compose.yml down
+
+      - name: Clean old Docker images cache
+        run: docker builder prune -a -f
+
+      - name: Build backend with Maven
+        run: mvn clean package
+
+      - name: Start services with Docker Compose
+        run: docker compose --env-file .env -f docker-compose.yml up -d --build
