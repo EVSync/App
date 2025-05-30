@@ -17,6 +17,13 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      - name: Confirm branch and environment
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Only deploys from main branch allowed."
+            exit 1
+          fi
+          
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -35,5 +42,15 @@ jobs:
       - name: Build backend with Maven
         run: mvn clean package
 
+      - name: Verify services are running
+        run: docker compose ps
+
       - name: Start services with Docker Compose
         run: docker compose --env-file .env -f docker-compose.yml up -d --build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar
+          path: target/*.jar
+
