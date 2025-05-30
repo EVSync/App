@@ -33,7 +33,6 @@
         <junit-jupiter.version>5.12.1</junit-jupiter.version>
         <junit-platform-suite.version>1.12.1</junit-platform-suite.version>
         <cucumber.version>7.21.1</cucumber.version>
-		<hibernate.version>6.6.13.Final</hibernate.version>
 		<java.version>21</java.version>
 		<sonar.organization>evsync</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
@@ -49,11 +48,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.h2database</groupId>
@@ -117,13 +111,6 @@
 			<version>1.19.3</version>
 			<scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-api</artifactId>
-			<version>5.12.1</version>
-			<scope>test</scope>
-		</dependency>
-		
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>
@@ -190,11 +177,19 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-  <groupId>app.getxray</groupId>
-  <artifactId>xray-maven-plugin</artifactId>
-  <version>0.9.0</version>
-  <scope>test</scope>
-</dependency>
+			<groupId>app.getxray</groupId>
+			<artifactId>xray-maven-plugin</artifactId>
+			<version>0.9.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate.validator</groupId>
+			<artifactId>hibernate-validator</artifactId>
+		</dependency>
 
 	</dependencies>
 

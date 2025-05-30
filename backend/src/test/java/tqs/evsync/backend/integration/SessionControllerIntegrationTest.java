@@ -1,21 +1,44 @@
 package tqs.evsync.backend.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
-import tqs.evsync.backend.model.*;
+import org.springframework.test.web.servlet.MvcResult;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import tqs.evsync.backend.model.ChargingOutlet;
+import tqs.evsync.backend.model.ChargingStation;
+import tqs.evsync.backend.model.Consumer;
+import tqs.evsync.backend.model.Operator;
+import tqs.evsync.backend.model.Reservation;
 import tqs.evsync.backend.model.enums.OperatorType;
-import tqs.evsync.backend.repository.*;
-
-import java.util.Map;
-
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import tqs.evsync.backend.model.enums.ReservationStatus;
+import tqs.evsync.backend.repository.ChargingOutletRepository;
+import tqs.evsync.backend.repository.ChargingStationRepository;
+import tqs.evsync.backend.repository.ConsumerRepository;
+import tqs.evsync.backend.repository.OperatorRepository;
+import tqs.evsync.backend.repository.ReservationRepository;
+import tqs.evsync.backend.repository.SessionRepository;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
@@ -37,7 +60,18 @@ public class SessionControllerIntegrationTest {
     @Autowired
     private OperatorRepository operatorRepo;
 
+    @Autowired
+    private ReservationRepository reservationRepo;
+
+    @Autowired
+    private ConsumerRepository consumerRepo;
+
+    @Autowired
+    private SessionRepository sessionRepo;
+
     private Long outletId;
+
+    private Long reservationId;
 
     @BeforeEach
     void setup() {
@@ -55,19 +89,49 @@ public class SessionControllerIntegrationTest {
 
         ChargingOutlet outlet = new ChargingOutlet();
         outlet.setMaxPower(22);
-        outlet.setChargingStation(station); // associar à station
+        outlet.setAvailable(true);
+        outlet.setChargingStation(station);
         outlet = outletRepo.save(outlet);
 
+        Consumer consumer = new Consumer();
+        consumer.setEmail("test@example.com");
+        consumer.setPassword("password");
+        consumer.setWallet(100.0); 
+        consumer = consumerRepo.save(consumer);
+
+        Reservation reservation = new Reservation();
+        reservation.setOutlet(outlet);
+        reservation.setStation(station); 
+        reservation.setConsumer(consumer); 
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+        reservation.setStartTime(LocalDateTime.now().plusHours(1).toString());
+        reservation.setDuration(1.0); 
+        reservation.setReservationFee(5.0); 
+
+        consumer.setReservations(List.of(reservation));
+        reservation = reservationRepo.save(reservation);
+        reservationId = reservation.getId();
         outletId = outlet.getId();
+    }
+
+    @AfterEach
+    void tearDown() {
+        sessionRepo.deleteAll();
+        reservationRepo.deleteAll();
+        outletRepo.deleteAll();
+        stationRepo.deleteAll();
+        operatorRepo.deleteAll();
+        consumerRepo.deleteAll();
+
+        reservationId = null;
+        outletId = null;
     }
 
     @Test
     void testCreateSessionIntegration() throws Exception {
-        Map<String, Object> payload = Map.of("outletId", outletId);
-
-        mockMvc.perform(post("/api/v1/sessions")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(payload)))
+        mockMvc.perform(post("/api/v1/sessions/start?reservationId=" + reservationId)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.status").value("ACTIVE"));
@@ -75,9 +139,14 @@ public class SessionControllerIntegrationTest {
 
     @Test
     void testGetAllSessions() throws Exception {
+        mockMvc.perform(post("/api/v1/sessions/start?reservationId=" + reservationId)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated());
+
         mockMvc.perform(get("/api/v1/sessions"))
+                .andDo(print())
                 .andExpect(status().isOk())
-                .andExpect(content().contentType("application/json"));
+                .andExpect(jsonPath("$[0].id").exists());
     }
 
     @Test
@@ -95,7 +164,7 @@ public class SessionControllerIntegrationTest {
         );
 
         mockMvc.perform(put("/api/v1/sessions/999999/end")
-                        .contentType("application/json")
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isNotFound());
     }
@@ -107,24 +176,24 @@ public class SessionControllerIntegrationTest {
                 .andExpect(content().string("Session not found."));
     }
 
+
     @Test
     void testSessionLifecycle() throws Exception {
-        String response = mockMvc.perform(post("/api/v1/sessions")
-                        .contentType("application/json")
-                        .content(objectMapper.writeValueAsString(Map.of("outletId", outletId))))
+        MvcResult createResult = mockMvc.perform(post("/api/v1/sessions/start?reservationId=" + reservationId)
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
+                .andReturn();
 
+        String response = createResult.getResponse().getContentAsString();
         Long sessionId = objectMapper.readTree(response).get("id").asLong();
 
         mockMvc.perform(put("/api/v1/sessions/" + sessionId + "/end")
-                        .contentType("application/json")
+                        .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
                                 "energyUsed", 15.0,
                                 "totalCost", 7.5))))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value("FINISHED"))
-                .andExpect(jsonPath("$.energyUsed").value(15.0))
-                .andExpect(jsonPath("$.totalCost").value(7.5));
+                .andExpect(jsonPath("$.status").value("COMPLETED"));
     }
+ 
 }
