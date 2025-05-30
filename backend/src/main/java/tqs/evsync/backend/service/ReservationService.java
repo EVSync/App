@@ -7,7 +7,6 @@ import tqs.evsync.backend.model.enums.ReservationStatus;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.List;
 
 @Service
 public class ReservationService {

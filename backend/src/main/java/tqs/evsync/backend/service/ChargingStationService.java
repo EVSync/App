@@ -37,7 +37,8 @@ public class ChargingStationService {
     }
 
     public ChargingStation getStationById(Long id) {
-        return chargingRepo.findById(id).orElse(null);
+        return chargingRepo.findById(id)
+        .orElseThrow(() -> new RuntimeException("Charging station with ID " + id + " not found"));
     }
 
     public List<ChargingStation> getAllStations() {
