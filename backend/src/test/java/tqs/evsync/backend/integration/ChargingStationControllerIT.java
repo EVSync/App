@@ -52,7 +52,6 @@ public class ChargingStationControllerIT {
 
     @BeforeEach
     void setup() {
-        // Create operator
         Operator operator = new Operator();
         operator.setEmail("station_test@example.com");
         operator.setPassword("1234");
@@ -60,7 +59,6 @@ public class ChargingStationControllerIT {
         operator = operatorRepo.save(operator);
         operatorId = operator.getId();
 
-        // Create charging station
         ChargingStation station = new ChargingStation();
         station.setLatitude(40.63);
         station.setLongitude(-8.65);
@@ -69,7 +67,6 @@ public class ChargingStationControllerIT {
         station = stationRepo.save(station);
         stationId = station.getId();
 
-        // Create charging outlet
         ChargingOutlet outlet = new ChargingOutlet();
         outlet.setMaxPower(22);
         outlet.setAvailable(true);

@@ -28,8 +28,6 @@ public class ChargingStation {
 	@JoinColumn(name = "operator_id")
 	private Operator operator;
 
-
-
 	public Long getId() {
 		return id;
 	}

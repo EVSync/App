@@ -1,7 +1,5 @@
 package tqs.evsync.backend.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -21,7 +19,6 @@ public class ChargingOutlet {
 
 
     @ManyToOne
-	@JsonIgnore
     @JoinColumn(name = "charging_station_id")
     private ChargingStation chargingStation;
 
