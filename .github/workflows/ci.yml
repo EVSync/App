@@ -161,7 +161,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: integration-test-results
-          path: test-results/
+          path: backend/target/failsafe-reports/
 
       - name: Check if test results exist
         run: |
