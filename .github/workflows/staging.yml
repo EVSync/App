@@ -26,12 +26,12 @@ jobs:
 
       - name: Create .env file with dev secrets
         run: |
-          echo "DB_URL=${{ secrets.STAGING_DB_URL }}" >> .env
-          echo "DB_USER=${{ secrets.STAGING_DB_USER }}" >> .env
-          echo "DB_PASS=${{ secrets.STAGING_DB_PASS }}" >> .env
+          echo "DB_URL=${{ secrets.DB_URL }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
 
       - name: Stop previous containers
-        run: docker compose --env-file .env -f docker-compose.staging.yml down
+        run: docker compose --env-file .env -f docker-compose.yml down
 
       - name: Clean old Docker images cache
         run: docker builder prune -a -f
@@ -40,10 +40,10 @@ jobs:
         run: mvn clean package
 
       - name: Start services with Docker Compose
-        run: docker compose --env-file .env -f docker-compose.staging.yml up -d --build
+        run: docker compose --env-file .env -f docker-compose.yml up -d --build
 
       - name: Verify services are running
-        run: docker compose -f docker-compose.staging.yml ps
+        run: docker compose -f docker-compose.yml ps
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
