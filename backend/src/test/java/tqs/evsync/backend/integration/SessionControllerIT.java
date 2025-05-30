@@ -43,7 +43,7 @@ import tqs.evsync.backend.repository.SessionRepository;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-public class SessionControllerIntegrationTest {
+public class SessionControllerIT {
 
     @Autowired
     private MockMvc mockMvc;
