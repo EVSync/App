@@ -9,6 +9,11 @@ services:
       - ./frontend/evsync:/app
     environment:
       - NODE_ENV=development
+    depends_on:
+      - backend
+    networks:
+      - app-network
+
 
 
   mysql:
@@ -29,6 +34,9 @@ services:
       interval: 5s
       timeout: 10s
       retries: 10
+    networks:
+      - app-network
+
   
   backend:
     build: 
@@ -41,7 +49,40 @@ services:
     depends_on:
         mysql:
           condition: service_healthy
+    networks:
+      - app-network
+
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - app-network
 
 volumes:
   mysql-data:
-    
+  grafana-storage:
+
+networks:
+  app-network:
+    driver: bridge
