@@ -30,10 +30,18 @@ public class ChargingStationService {
     @Autowired
     private OpenStreetMapService osmService;
 
-    public ChargingStationService(ChargingStationRepository chargingRepo, OperatorRepository operatorRepo, ChargingOutletRepository chargingOutletRepo) {
+    public ChargingStationService(ChargingStationRepository chargingRepo, 
+                                OperatorRepository operatorRepo,
+                                ChargingOutletRepository chargingOutletRepo,
+                                OpenStreetMapService osmService) {
         this.chargingRepo = chargingRepo;
         this.operatorRepo = operatorRepo;
         this.chargingOutletRepo = chargingOutletRepo;
+        this.osmService = osmService;
+    }
+
+    public ChargingStationService(ChargingStationRepository chargingRepo, OperatorRepository operatorRepo, ChargingOutletRepository chargingOutletRepo) {
+        this(chargingRepo, operatorRepo, chargingOutletRepo, null);
     }
 
     public ChargingStation getStationById(Long id) {
@@ -89,6 +97,10 @@ public class ChargingStationService {
     }
 
     public ChargingStation addChargingStationWithAddress(String address, Long operatorId){
+        if (address == null || address.isBlank()) {
+            throw new IllegalArgumentException("Address cannot be null or empty");
+        }
+
         Operator operator = operatorRepo.findById(operatorId)
             .orElseThrow(() -> new RuntimeException("Operator with ID " + operatorId + " not found"));
         
@@ -101,6 +113,7 @@ public class ChargingStationService {
         
         return chargingRepo.save(chargingStation);
     }
+
     
     public ChargingStation updateChargingStationStatus(Long id,  ChargingStationStatus status) {
         ChargingStation chargingStation = chargingRepo.findById(id)
