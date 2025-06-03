@@ -3,6 +3,7 @@ package tqs.evsync.backend.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
 import tqs.evsync.backend.model.ChargingOutlet;
 import tqs.evsync.backend.model.ChargingStation;
 import tqs.evsync.backend.repository.ChargingOutletRepository;
@@ -30,14 +31,19 @@ public class ChargingStationService {
     @Autowired
     private OpenStreetMapService osmService;
 
-    public ChargingStationService(ChargingStationRepository chargingRepo, OperatorRepository operatorRepo, ChargingOutletRepository chargingOutletRepo) {
+    public ChargingStationService(ChargingStationRepository chargingRepo, 
+                                OperatorRepository operatorRepo,
+                                ChargingOutletRepository chargingOutletRepo,
+                                OpenStreetMapService osmService) {
         this.chargingRepo = chargingRepo;
         this.operatorRepo = operatorRepo;
         this.chargingOutletRepo = chargingOutletRepo;
+        this.osmService = osmService;
     }
 
     public ChargingStation getStationById(Long id) {
-        return chargingRepo.findById(id).orElse(null);
+        return chargingRepo.findById(id)
+        .orElseThrow(() -> new RuntimeException("Charging station with ID " + id + " not found"));
     }
 
     public List<ChargingStation> getAllStations() {
@@ -88,6 +94,10 @@ public class ChargingStationService {
     }
 
     public ChargingStation addChargingStationWithAddress(String address, Long operatorId){
+        if (address == null || address.isBlank()) {
+            throw new IllegalArgumentException("Address cannot be null or empty");
+        }
+
         Operator operator = operatorRepo.findById(operatorId)
             .orElseThrow(() -> new RuntimeException("Operator with ID " + operatorId + " not found"));
         
@@ -100,6 +110,7 @@ public class ChargingStationService {
         
         return chargingRepo.save(chargingStation);
     }
+
     
     public ChargingStation updateChargingStationStatus(Long id,  ChargingStationStatus status) {
         ChargingStation chargingStation = chargingRepo.findById(id)
@@ -122,16 +133,15 @@ public class ChargingStationService {
         }
     }
 
-    public ChargingStation addChargingOutlet(Long id, ChargingOutlet chargingOutlet) {
-        ChargingStation chargingStation = chargingRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Charging station with ID = " + id + " not found"));
-        ChargingOutlet checkChargingOutlet = chargingOutletRepo.findById(chargingOutlet.getId())
-            .orElseThrow(() -> new RuntimeException("Charging outlet with ID = " + chargingOutlet.getId() + " not found"));
-
-        chargingStation.addChargingOutlet(checkChargingOutlet);
-        
-        return chargingRepo.save(chargingStation);
+    public ChargingStation addChargingOutlet(Long stationId, ChargingOutlet outlet) {
+        ChargingStation station = chargingRepo.findById(stationId)
+            .orElseThrow(() -> new RuntimeException("Charging station not found"));
+    
+        station.addChargingOutlet(outlet);   
+        outlet.setChargingStation(station); 
+        return chargingRepo.save(station);
     }
+    
 
     public ChargingStation removeChargingOutlet(Long id, ChargingOutlet chargingOutlet) {
         ChargingStation chargingStation = chargingRepo.findById(id)

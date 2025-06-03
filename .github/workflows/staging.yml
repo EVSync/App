@@ -26,9 +26,10 @@ jobs:
 
       - name: Create .env file with dev secrets
         run: |
-          echo "DB_URL=${{ secrets.DB_URL }}" >> .env
+          echo "DB_URL=${{ secrets.DB_NAME }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+          echo "SPRING_PROFILES_ACTIVE=${{ secrets.SPRING_PROFILES_ACTIVE }}" >> .env
 
       - name: Stop previous containers
         run: docker compose --env-file .env -f docker-compose.yml down
@@ -37,7 +38,7 @@ jobs:
         run: docker builder prune -a -f
 
       - name: Build backend with Maven
-        run: mvn clean package
+        run: mvn clean package -f backend
 
       - name: Start services with Docker Compose
         run: docker compose --env-file .env -f docker-compose.yml up -d --build

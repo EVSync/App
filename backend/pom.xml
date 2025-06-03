@@ -27,17 +27,14 @@
 		<url/>
 	</scm>
 	<properties>
-	    <slf4j.version>2.0.17</slf4j.version>
-        <logback.version>1.5.18</logback.version>
-
-        <junit-jupiter.version>5.12.1</junit-jupiter.version>
-        <junit-platform-suite.version>1.12.1</junit-platform-suite.version>
-        <cucumber.version>7.21.1</cucumber.version>
-		<hibernate.version>6.6.13.Final</hibernate.version>
+		<junit-jupiter.version>5.10.2</junit-jupiter.version> 
+		<junit-platform-suite.version>1.10.2</junit-platform-suite.version> 
+		<cucumber.version>7.16.1</cucumber.version>
 		<java.version>21</java.version>
 		<sonar.organization>evsync</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 		<sonar.projectKey>EVSync_App</sonar.projectKey>
+		<testcontainers.version>1.19.7</testcontainers.version>
 	</properties>
 
 	<dependencies>
@@ -53,7 +50,7 @@
 		<dependency>
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
+			<scope>test</scope>
 		</dependency>
 		
 		<dependency>
@@ -68,17 +65,21 @@
 			<artifactId>mysql-connector-j</artifactId>
 			<scope>runtime</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.5.0</version>
+		</dependency>
+		
 
 		<!-- Cucumber for BDD testing -->
 		<dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>${slf4j.version}</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
         </dependency>
 
         <dependency>
@@ -93,6 +94,24 @@
             <version>${junit-platform-suite.version}</version>
             <scope>test</scope>
         </dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers</artifactId>
+			<version>${testcontainers.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>mysql</artifactId>
+			<version>${testcontainers.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>${testcontainers.version}</version>
+			<scope>test</scope>
+		</dependency>
         <dependency>
             <groupId>io.cucumber</groupId>
             <artifactId>cucumber-java</artifactId>
@@ -168,15 +187,24 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-  <groupId>app.getxray</groupId>
-  <artifactId>xray-maven-plugin</artifactId>
-  <version>0.9.0</version>
-  <scope>test</scope>
-</dependency>
+			<groupId>app.getxray</groupId>
+			<artifactId>xray-maven-plugin</artifactId>
+			<version>0.9.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate.validator</groupId>
+			<artifactId>hibernate-validator</artifactId>
+		</dependency>
 
 	</dependencies>
 
 	<build>
+
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
