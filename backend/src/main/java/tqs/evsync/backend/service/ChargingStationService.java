@@ -3,6 +3,7 @@ package tqs.evsync.backend.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jakarta.transaction.Transactional;
 import tqs.evsync.backend.model.ChargingOutlet;
 import tqs.evsync.backend.model.ChargingStation;
 import tqs.evsync.backend.repository.ChargingOutletRepository;
@@ -38,10 +39,6 @@ public class ChargingStationService {
         this.operatorRepo = operatorRepo;
         this.chargingOutletRepo = chargingOutletRepo;
         this.osmService = osmService;
-    }
-
-    public ChargingStationService(ChargingStationRepository chargingRepo, OperatorRepository operatorRepo, ChargingOutletRepository chargingOutletRepo) {
-        this(chargingRepo, operatorRepo, chargingOutletRepo, null);
     }
 
     public ChargingStation getStationById(Long id) {
@@ -140,7 +137,6 @@ public class ChargingStationService {
         ChargingStation station = chargingRepo.findById(stationId)
             .orElseThrow(() -> new RuntimeException("Charging station not found"));
     
-        outlet.setChargingStation(station); 
         station.addChargingOutlet(outlet);    
         return chargingRepo.save(station);
     }

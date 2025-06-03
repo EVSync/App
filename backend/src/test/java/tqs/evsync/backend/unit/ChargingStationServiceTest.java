@@ -20,7 +20,7 @@ public class ChargingStationServiceTest {
         ChargingStationRepository stationRepo = mock(ChargingStationRepository.class);
         OperatorRepository operatorRepo = mock(OperatorRepository.class);
         ChargingOutletRepository outletRepo = mock(ChargingOutletRepository.class);
-        ChargingStationService service = new ChargingStationService(stationRepo, operatorRepo, outletRepo);
+        ChargingStationService service = new ChargingStationService(stationRepo, operatorRepo, outletRepo, null);
 
         ChargingStation s1 = new ChargingStation();
         s1.setId(1L); s1.setLatitude(40.64); s1.setLongitude(-8.65);

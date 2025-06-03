@@ -150,6 +150,9 @@ public class ChargingStationControllerIT {
         ChargingOutlet newOutlet = new ChargingOutlet();
         newOutlet.setMaxPower(11);
         newOutlet.setAvailable(true);
+        ChargingStation station = stationRepo.findById(stationId).orElseThrow();
+        station.addChargingOutlet(newOutlet);
+        newOutlet.setChargingStation(station);
 
         mockMvc.perform(put("/charging-station/" + stationId + "/add-charging-outlet")
                 .contentType(MediaType.APPLICATION_JSON)

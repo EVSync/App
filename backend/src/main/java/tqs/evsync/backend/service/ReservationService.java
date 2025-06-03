@@ -1,5 +1,6 @@
 package tqs.evsync.backend.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import tqs.evsync.backend.model.*;
 import tqs.evsync.backend.repository.*;
@@ -11,9 +12,16 @@ import java.util.Optional;
 @Service
 public class ReservationService {
 
+    @Autowired
     private final ReservationRepository reservationRepo;
+    
+    @Autowired
     private final ChargingStationRepository stationRepo;
+    
+    @Autowired
     private final ConsumerRepository consumerRepo;
+    
+    @Autowired
     private final ChargingOutletRepository outletRepo;
 
     public ReservationService(ReservationRepository r, ConsumerRepository c, ChargingStationRepository s, ChargingOutletRepository o) {

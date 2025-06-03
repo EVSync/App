@@ -20,7 +20,7 @@ public class ChargingStation {
 	private Double longitude;
 	private ChargingStationStatus status;
 
-	@OneToMany(mappedBy = "chargingStation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+	@OneToMany(mappedBy = "chargingStation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
 	private List<ChargingOutlet> outlets = new ArrayList<>();
 
 
@@ -66,11 +66,9 @@ public class ChargingStation {
 	}
 	public void addChargingOutlet(ChargingOutlet chargingOutlet) {
 		this.outlets.add(chargingOutlet);
-		chargingOutlet.setChargingStation(this);
 	}
 
 	public void removeChargingOutlet(ChargingOutlet chargingOutlet) {
 		this.outlets.remove(chargingOutlet);
-		chargingOutlet.setChargingStation(null);
 	}
 }

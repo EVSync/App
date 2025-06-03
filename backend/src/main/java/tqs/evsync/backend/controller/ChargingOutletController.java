@@ -1,10 +1,13 @@
 package tqs.evsync.backend.controller;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import tqs.evsync.backend.model.ChargingOutlet;
+import tqs.evsync.backend.model.ChargingStation;
 import tqs.evsync.backend.repository.ChargingOutletRepository;
 import tqs.evsync.backend.repository.ChargingStationRepository;
 
@@ -18,14 +21,20 @@ public class ChargingOutletController {
     @Autowired
     private ChargingStationRepository stationRepository;
 
-    @PostMapping
-    public ResponseEntity<?> createOutlet(@RequestBody ChargingOutlet outlet) {
-        if (outlet.getChargingStation() == null || outlet.getChargingStation().getId() == null ||
-            !stationRepository.existsById(outlet.getChargingStation().getId())) {
-            return ResponseEntity.badRequest().body("Invalid or missing charging station");
+    @PostMapping("/{stationId}")
+    public ResponseEntity<ChargingOutlet> createOutlet(
+            @PathVariable Long stationId,
+            @RequestBody ChargingOutlet newOutlet) {
+        
+        Optional<ChargingStation> station = stationRepository.findById(stationId);
+        if (!station.isPresent()) {
+            return ResponseEntity.badRequest().body(null);
         }
 
-        return ResponseEntity.ok(outletRepository.save(outlet));
+        station.get().addChargingOutlet(newOutlet);
+        ChargingOutlet savedOutlet = outletRepository.save(newOutlet);
+
+        return ResponseEntity.ok(savedOutlet);
     }
 
     @GetMapping

@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -89,11 +90,12 @@ public class ChargingOutletControllerIT {
         newOutlet.setMaxPower(11);
         newOutlet.setAvailable(true);
         
-        ChargingStation station = new ChargingStation();
-        station.setId(stationId);
+        ChargingStation station = stationRepository.findById(stationId).orElseThrow();
+        station.addChargingOutlet(newOutlet);
         newOutlet.setChargingStation(station);
+        
 
-        mockMvc.perform(post("/api/outlets")
+        mockMvc.perform(post("/api/outlets/{stationId}", stationId)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(newOutlet)))
                 .andDo(print())
@@ -112,7 +114,7 @@ public class ChargingOutletControllerIT {
         station.setId(999999L);
         newOutlet.setChargingStation(station);
 
-        mockMvc.perform(post("/api/outlets")
+        mockMvc.perform(post("/api/outlets/{stationId}", 999999L)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(newOutlet)))
                 .andDo(print())
@@ -121,6 +123,7 @@ public class ChargingOutletControllerIT {
 
     @Test
     void testListOutlets() throws Exception {
+        System.out.println("All outlets in DB: " + outletRepository.findAll());
         MvcResult result = mockMvc.perform(get("/api/outlets"))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -139,6 +142,7 @@ public class ChargingOutletControllerIT {
     @Test
     void testListOutlets_Empty() throws Exception {
         outletRepository.deleteAll();
+        stationRepository.deleteAll();
 
         mockMvc.perform(get("/api/outlets"))
                 .andDo(print())
