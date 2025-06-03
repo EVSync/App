@@ -20,18 +20,13 @@ public class ChargingStation {
 	private Double longitude;
 	private ChargingStationStatus status;
 
-	@OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "station_id") 
-    private List<ChargingOutlet> outlets = new ArrayList<>();
+	@OneToMany(mappedBy = "chargingStation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+	private List<ChargingOutlet> outlets = new ArrayList<>();
+
 
 	@ManyToOne()
 	@JoinColumn(name = "operator_id")
 	private Operator operator;
-	
-
-	@OneToMany(mappedBy = "chargingStation", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<ChargingOutlet> chargingOutlets= new ArrayList<>();
-
 
 	public Long getId() {
 		return id;

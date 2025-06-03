@@ -1,9 +1,8 @@
-name: EVSync Deployment
+name: EVSync Dev Deployment
 
 on:
   push:
-    branches: [ "main" ]
-
+    branches: ["dev"]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -11,16 +10,23 @@ concurrency:
 
 jobs:
   deploy:
-    name: EVSync Deploy
+    name: EVSync Dev Deploy
     runs-on: self-hosted
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create .env file with secrets
+      - name: Confirm branch and environment
         run: |
-          echo "DB_URL=${{ secrets.DB_NAME }}" >> .env
+          if [ "$GITHUB_REF" != "refs/heads/dev" ]; then
+            echo "Only deploys from dev branch allowed."
+            exit 1
+          fi
+
+      - name: Create .env file with dev secrets
+        run: |
+          echo "DB_URL=${{ secrets.DB_URL }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
 
@@ -35,3 +41,12 @@ jobs:
 
       - name: Start services with Docker Compose
         run: docker compose --env-file .env -f docker-compose.yml up -d --build
+
+      - name: Verify services are running
+        run: docker compose -f docker-compose.yml ps
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar-dev
+          path: target/*.jar

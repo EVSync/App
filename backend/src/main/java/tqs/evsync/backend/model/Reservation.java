@@ -13,6 +13,7 @@ public class Reservation {
 
     private String startTime;
     private Double duration;
+    private double reservationFee;
     
     @ManyToOne
     @JoinColumn(name = "station_id")
@@ -25,7 +26,6 @@ public class Reservation {
     @ManyToOne
     @JoinColumn(name = "consumer_id")
     private Consumer consumer;
-
 
 
     @ManyToOne
@@ -86,5 +86,13 @@ public class Reservation {
 
     public void setOutlet(ChargingOutlet outlet) {
         this.outlet = outlet;
+    }
+
+    public double getReservationFee() {
+        return reservationFee;
+    }
+
+    public void setReservationFee(double reservationFee) {
+        this.reservationFee = reservationFee;
     }
 }
