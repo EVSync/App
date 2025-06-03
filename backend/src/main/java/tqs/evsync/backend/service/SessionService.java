@@ -6,7 +6,7 @@ import tqs.evsync.backend.model.Reservation;
 import tqs.evsync.backend.model.ChargingSession;
 import tqs.evsync.backend.model.enums.ChargingSessionStatus;
 import tqs.evsync.backend.model.enums.ReservationStatus;
-import tqs.evsync.backend.repository.SessionRepository;
+import tqs.evsync.backend.repository.ChargingSessionRepository;
 import tqs.evsync.backend.repository.ReservationRepository;
 import tqs.evsync.backend.model.Consumer;
 
@@ -18,13 +18,13 @@ import java.util.Optional;
 public class SessionService {
 
     @Autowired
-    private SessionRepository sessionRepository;
+    private ChargingSessionRepository sessionRepository;
 
     @Autowired
     private ReservationRepository reservationRepository;
 
 
-    public SessionService(SessionRepository sessionRepository,ReservationRepository reservationRepository) {
+    public SessionService(ChargingSessionRepository sessionRepository,ReservationRepository reservationRepository) {
         this.sessionRepository = sessionRepository;
         this.reservationRepository = reservationRepository;
     }
