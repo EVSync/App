@@ -201,6 +201,13 @@
 			<artifactId>hibernate-validator</artifactId>
 		</dependency>
 
+		<!-- Authentication -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-security</artifactId>
+			<version>3.1.0</version>
+		</dependency>
+
 	</dependencies>
 
 	<build>
