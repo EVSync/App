@@ -33,6 +33,39 @@ public class ConsumerController {
         return consumer.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateConsumer(@PathVariable Long id, @RequestBody Consumer consumerDetails) {
+        Optional<Consumer> optionalConsumer = consumerRepository.findById(id);
+        if (optionalConsumer.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Consumer consumer = optionalConsumer.get();
+        consumer.setEmail(consumerDetails.getEmail());
+        consumer.setPassword(consumerDetails.getPassword());
+        consumer.setWallet(consumerDetails.getWallet());
+        
+        Consumer updatedConsumer = consumerRepository.save(consumer);
+        return ResponseEntity.ok(updatedConsumer);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteConsumer(@PathVariable Long id) {
+        Optional<Consumer> optionalConsumer = consumerRepository.findById(id);
+        if (optionalConsumer.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        consumerRepository.delete(optionalConsumer.get());
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/email/{email}")
+    public ResponseEntity<?> getConsumerByEmail(@PathVariable String email) {
+        Optional<Consumer> consumer = consumerRepository.findByEmail(email);
+        return consumer.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
     @PutMapping("/{id}/wallet")
     public ResponseEntity<?> addToWallet(@PathVariable Long id, @RequestParam Double amount) {
         if (amount <= 0) {
@@ -50,4 +83,12 @@ public class ConsumerController {
         return ResponseEntity.ok(consumer);
     }
 
+    @GetMapping("/{id}/wallet")
+    public ResponseEntity<?> getWalletBalance(@PathVariable Long id) {
+        Optional<Consumer> optionalConsumer = consumerRepository.findById(id);
+        if (optionalConsumer.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(optionalConsumer.get().getWallet());
+    }
 }
