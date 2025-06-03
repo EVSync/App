@@ -95,6 +95,11 @@ public class SessionService {
     public List<ChargingSession> getAllSessions(){
         return sessionRepository.findAll();
     }
+    
+    public List<ChargingSession> getSessionsByConsumer(Long consumerId) {
+        return sessionRepository.findAllByConsumerId(consumerId);
+    }
+    
 
     public void deleteSession(Long id) {
         ChargingSession session = sessionRepository.findById(id)
