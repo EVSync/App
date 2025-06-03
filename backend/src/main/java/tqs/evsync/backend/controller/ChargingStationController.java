@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,7 @@ import tqs.evsync.backend.model.ChargingStation;
 import tqs.evsync.backend.model.enums.ChargingStationStatus;
 import tqs.evsync.backend.service.ChargingStationService;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @Controller
 @RequestMapping("/charging-station")
 public class ChargingStationController {

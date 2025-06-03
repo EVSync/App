@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import tqs.evsync.backend.model.Reservation;
 import tqs.evsync.backend.service.ReservationService;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/reservations")
 public class ReservationController {
