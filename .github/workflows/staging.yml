@@ -37,7 +37,7 @@ jobs:
         run: docker builder prune -a -f
 
       - name: Build backend with Maven
-        run: mvn clean package
+        run: mvn clean package -f backend
 
       - name: Start services with Docker Compose
         run: docker compose --env-file .env -f docker-compose.yml up -d --build
