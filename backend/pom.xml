@@ -137,8 +137,17 @@
 			<version>2.15.2</version>
 		</dependency>
 
+		<!-- Actuator for exposing health and metrics -->
+		<dependency>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
 
-
+		<!-- Micrometer Prometheus Registry -->
+		<dependency>
+		<groupId>io.micrometer</groupId>
+		<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
 
 		<!-- Mockito for Unit and Service Tests -->
 		<dependency>

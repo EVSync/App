@@ -18,7 +18,6 @@ import tqs.evsync.backend.repository.ChargingStationRepository;
 import tqs.evsync.backend.repository.OperatorRepository;
 import tqs.evsync.backend.service.ChargingStationService;
 import tqs.evsync.backend.service.OpenStreetMapService;
-import org.mockito.InjectMocks;
 
 import java.util.List;
 import java.util.Optional;
