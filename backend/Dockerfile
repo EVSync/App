@@ -3,7 +3,7 @@
     WORKDIR /workspace
     COPY pom.xml ./
     COPY src ./src
-    RUN mvn clean package 
+    RUN mvn clean package
 
 
     FROM openjdk:21-jdk-slim

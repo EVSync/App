@@ -34,11 +34,12 @@ import tqs.evsync.backend.model.Reservation;
 import tqs.evsync.backend.model.enums.OperatorType;
 import tqs.evsync.backend.model.enums.ReservationStatus;
 import tqs.evsync.backend.repository.ChargingOutletRepository;
+import tqs.evsync.backend.repository.ChargingSessionRepository;
 import tqs.evsync.backend.repository.ChargingStationRepository;
 import tqs.evsync.backend.repository.ConsumerRepository;
 import tqs.evsync.backend.repository.OperatorRepository;
 import tqs.evsync.backend.repository.ReservationRepository;
-import tqs.evsync.backend.repository.SessionRepository;
+
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc
@@ -67,7 +68,7 @@ public class SessionControllerIT {
     private ConsumerRepository consumerRepo;
 
     @Autowired
-    private SessionRepository sessionRepo;
+    private ChargingSessionRepository sessionRepo;
 
     private Long outletId;
 
