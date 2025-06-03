@@ -13,7 +13,7 @@ import lombok.Setter;
 
 @Service
 public class OpenStreetMapService {
-    private static final String OSM_NOMINATIM_API = "https://nominatim.openstreetmap.org";
+    public static final String OSM_NOMINATIM_API = "https://nominatim.openstreetmap.org";
 
     private final RestTemplate restTemplate;
 
