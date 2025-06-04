@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import tqs.evsync.backend.model.Session;
+import tqs.evsync.backend.model.ChargingSession;
 import tqs.evsync.backend.service.SessionService;
 
 import java.util.List;
@@ -23,7 +23,7 @@ public class SessionController {
     @PostMapping("/start")
     public ResponseEntity<?> startSessionFromReservation(@RequestParam Long reservationId) {
         try {
-            Session session = sessionService.startSessionFromReservation(reservationId);
+            ChargingSession session = sessionService.startSessionFromReservation(reservationId);
             return ResponseEntity.status(HttpStatus.CREATED).body(session);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -39,7 +39,7 @@ public class SessionController {
     }
 
     @GetMapping
-    public List<Session> getAllSessions() {
+    public List<ChargingSession> getAllSessions() {
         return sessionService.getAllSessions();
     }
 
@@ -48,7 +48,7 @@ public class SessionController {
         try {
             double energyUsed = Double.parseDouble(payload.get("energyUsed").toString());
 
-            Session ended = sessionService.endSession(id, energyUsed);
+            ChargingSession ended = sessionService.endSession(id, energyUsed);
             return ResponseEntity.ok(ended);
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
