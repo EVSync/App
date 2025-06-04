@@ -16,7 +16,6 @@ services:
       - app-network
 
 
-
   mysql:
     image: mysql:8.0
     restart: always
@@ -64,6 +63,7 @@ services:
     networks:
       - app-network
 
+
   grafana:
     image: grafana/grafana
     container_name: grafana
@@ -79,6 +79,14 @@ services:
       - prometheus
     networks:
       - app-network
+
+  k6:
+    image: grafana/k6
+    volumes:
+      - ./performance_tests:/scripts
+    networks:
+      - app-network
+    entrypoint: ["sleep", "infinity"]
 
 volumes:
   mysql-data:
