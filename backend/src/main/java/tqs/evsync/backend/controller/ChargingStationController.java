@@ -128,4 +128,15 @@ public class ChargingStationController {
         }
     }
 
+    @GetMapping("/ChargingOutlets/{stationId}")
+    public ResponseEntity<?> getChargingOutletsByStationId(@PathVariable Long stationId) {
+        try {
+            List<ChargingOutlet> outlets = chargingStationService.getChargingOutletsByStationId(stationId);
+            return ResponseEntity.ok(outlets);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+
 }

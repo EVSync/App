@@ -30,6 +30,9 @@ public class ChargingStationService {
     @Autowired
     private OpenStreetMapService osmService;
 
+    @Autowired
+    private ChargingOutletRepository outletRepo;
+
     public ChargingStationService(ChargingStationRepository chargingRepo, 
                                 OperatorRepository operatorRepo,
                                 ChargingOutletRepository chargingOutletRepo,
@@ -135,9 +138,17 @@ public class ChargingStationService {
     public ChargingStation addChargingOutlet(Long stationId, ChargingOutlet outlet) {
         ChargingStation station = chargingRepo.findById(stationId)
             .orElseThrow(() -> new RuntimeException("Charging station not found"));
-    
-        station.addChargingOutlet(outlet);    
-        return chargingRepo.save(station);
+
+        ChargingOutlet existingOutlet = outletRepo.findById(outlet.getId())
+            .orElseThrow(() -> new RuntimeException("Outlet not found"));
+        
+        existingOutlet.setChargingStation(station);
+
+        station.getChargingOutlets().add(existingOutlet);
+        
+        outletRepo.save(existingOutlet);
+
+        return chargingRepo.findById(stationId).get();
     }
     
 
@@ -150,6 +161,13 @@ public class ChargingStationService {
         chargingStation.removeChargingOutlet(checkChargingOutlet);
         
         return chargingRepo.save(chargingStation);
+    }
+
+    public List<ChargingOutlet> getChargingOutletsByStationId(Long stationId) {
+        ChargingStation station = chargingRepo.findById(stationId)
+            .orElseThrow(() -> new RuntimeException("Charging station with ID = " + stationId + " not found"));
+        
+        return station.getChargingOutlets();
     }
 
 }
