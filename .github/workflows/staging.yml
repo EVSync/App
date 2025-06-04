@@ -26,10 +26,9 @@ jobs:
 
       - name: Create .env file with dev secrets
         run: |
-          echo "DB_URL=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_URL=${{ secrets.DB_URL }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
-          echo "SPRING_PROFILES_ACTIVE=${{ secrets.SPRING_PROFILES_ACTIVE }}" >> .env
 
       - name: Stop previous containers
         run: docker compose --env-file .env -f docker-compose.yml down
@@ -46,8 +45,5 @@ jobs:
       - name: Verify services are running
         run: docker compose -f docker-compose.yml ps
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-jar-dev
-          path: target/*.jar
+      - name: Run smoke tests
+        run: docker compose exec k6 k6 run /scripts/smoke.js
