@@ -3,6 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
@@ -12,9 +13,9 @@ export default function Home() {
   const [operatorId, setOperatorId] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const API_BASE = "http://localhost:8080"; // Adjust if your Spring runs elsewhere
+  const API_BASE = "http://localhost:8080"; // adjust if needed
 
-  // 1) Create a new operator via POST /api/operators
+  // 1) Create a new operator
   async function handleCreateOperator(e) {
     e.preventDefault();
     setErrorMsg("");
@@ -25,7 +26,7 @@ export default function Home() {
         body: JSON.stringify({
           email: email.trim(),
           password: password.trim(),
-          operatorType: "OPERATOR", 
+          operatorType: "OPERATOR",
         }),
       });
 
@@ -34,7 +35,7 @@ export default function Home() {
         throw new Error(text || response.statusText);
       }
 
-      const data = await response.json(); // e.g. { id: 5, email: "...", ... }
+      const data = await response.json(); // e.g. { id: 5, ... }
       const newId = data.id;
       if (!newId) throw new Error("No operator ID returned");
       router.push(`/map?operatorId=${newId}`);
@@ -44,7 +45,7 @@ export default function Home() {
     }
   }
 
-  // 2) Just enter an existing operator ID
+  // 2) Enter existing operator ID
   function handleEnterOperator(e) {
     e.preventDefault();
     setErrorMsg("");
@@ -60,8 +61,8 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center h-screen bg-gray-50 px-4">
       <h1 className="text-4xl font-bold mb-6">Aveiro EV Map</h1>
 
-      {/* Toggle: Create vs Enter */}
-      <div className="flex space-x-4 mb-8">
+      {/* Buttons: Create/Enter Operator, Consumer Login, Contributor Map */}
+      <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mb-8">
         <button
           className={
             mode === "create"
@@ -88,6 +89,18 @@ export default function Home() {
         >
           Enter Operator ID
         </button>
+        <Link
+          href="/login"
+          className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 transition"
+        >
+          Consumer Login
+        </Link>
+        <Link
+          href="/map"
+          className="px-4 py-2 rounded bg-yellow-500 text-white hover:bg-yellow-600 transition"
+        >
+          Contributor Map
+        </Link>
       </div>
 
       {mode === "create" ? (
@@ -157,4 +170,3 @@ export default function Home() {
     </div>
   );
 }
- 

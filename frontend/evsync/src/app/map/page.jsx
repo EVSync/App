@@ -12,18 +12,11 @@ export default function MapPage() {
 
   useEffect(() => {
     const opId = searchParams.get("operatorId");
-    if (!opId) {
-      // if someone visits /map without an operator, bounce back to /
-      router.push("/");
-      return;
-    }
+    // if we explicitly want to guard operatorId, we can, but for consumer, opId will be null
     setOperatorId(opId);
   }, [searchParams, router]);
 
-  if (!operatorId) {
-    return null; // or a loading spinner
-  }
-
+  // Always render the map (consumer mode if operatorId is null)
   return (
     <div className="h-screen w-full">
       <AveiroMap operatorId={operatorId} />
