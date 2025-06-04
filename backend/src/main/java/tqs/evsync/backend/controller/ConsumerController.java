@@ -1,6 +1,8 @@
 package tqs.evsync.backend.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,14 +59,30 @@ public class ConsumerController {
         return ResponseEntity.ok(consumer);
     }
 
-
-    @GetMapping("/consumer/{consumerId}")
-    public ResponseEntity<?> getChargingSessionsByConsumer(@PathVariable Long consumerId) {
-        List<ChargingSession> sessions = sessionService.getSessionsByConsumer(consumerId);
-        if (sessions.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Nenhuma sessão encontrada para este consumidor.");
+    @GetMapping("/{id}/dashboard")
+    public ResponseEntity<?> getConsumptionDashboard(@PathVariable Long id) {
+        Optional<Consumer> optionalConsumer = consumerRepository.findById(id);
+        if (optionalConsumer.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Consumidor não encontrado.");
         }
-        return ResponseEntity.ok(sessions);
+
+        Consumer consumer = optionalConsumer.get();
+        List<ChargingSession> sessions = sessionService.getSessionsByConsumer(consumer);
+
+        double totalEnergy = sessions.stream().mapToDouble(ChargingSession::getEnergyConsumed).sum();
+        double totalCost = sessions.stream().mapToDouble(ChargingSession::getTotalCost).sum();
+
+        Map<String, Object> dashboard = new HashMap<>();
+        dashboard.put("consumerId", consumer.getId());
+        dashboard.put("email", consumer.getEmail());
+        dashboard.put("totalSessions", sessions.size());
+        dashboard.put("totalEnergyConsumed", totalEnergy);
+        dashboard.put("totalCost", totalCost);
+        dashboard.put("wallet", consumer.getWallet());
+
+        return ResponseEntity.ok(dashboard);
     }
+
+   
 
 }
