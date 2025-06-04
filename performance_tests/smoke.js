@@ -11,4 +11,8 @@ export default function () {
     check(res, {
         'status is 200': (r) => r.status === 200,
     });
+    const res2 = http.get('http://backend:8080/charging-station');
+    check(res2, {
+        'status is 200': (r) => r.status === 200,
+    });
 }
