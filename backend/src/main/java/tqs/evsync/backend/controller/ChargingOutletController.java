@@ -11,6 +11,7 @@ import tqs.evsync.backend.model.ChargingStation;
 import tqs.evsync.backend.repository.ChargingOutletRepository;
 import tqs.evsync.backend.repository.ChargingStationRepository;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/outlets")
 public class ChargingOutletController {

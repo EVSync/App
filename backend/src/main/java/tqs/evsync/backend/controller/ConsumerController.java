@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import tqs.evsync.backend.model.Consumer;
 import tqs.evsync.backend.repository.ConsumerRepository;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/consumers")
 public class ConsumerController {

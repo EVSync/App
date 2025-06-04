@@ -1,103 +1,172 @@
-import Image from "next/image";
+// src/app/page.jsx
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.js
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const router = useRouter();
+  const [mode, setMode] = useState("create"); // "create" or "enter"
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [operatorId, setOperatorId] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const API_BASE = "http://localhost:8080"; // adjust if needed
+
+  // 1) Create a new operator
+  async function handleCreateOperator(e) {
+    e.preventDefault();
+    setErrorMsg("");
+    try {
+      const response = await fetch(`${API_BASE}/api/operators`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim(),
+          password: password.trim(),
+          operatorType: "OPERATOR",
+        }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || response.statusText);
+      }
+
+      const data = await response.json(); // e.g. { id: 5, ... }
+      const newId = data.id;
+      if (!newId) throw new Error("No operator ID returned");
+      router.push(`/map?operatorId=${newId}`);
+    } catch (err) {
+      console.error("Create operator error:", err);
+      setErrorMsg("Failed to create operator: " + (err.message || "Unknown"));
+    }
+  }
+
+  // 2) Enter existing operator ID
+  function handleEnterOperator(e) {
+    e.preventDefault();
+    setErrorMsg("");
+    const parsed = parseInt(operatorId, 10);
+    if (isNaN(parsed) || parsed <= 0) {
+      setErrorMsg("Enter a valid numeric operator ID");
+      return;
+    }
+    router.push(`/map?operatorId=${parsed}`);
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-50 px-4">
+      <h1 className="text-4xl font-bold mb-6">Aveiro EV Map</h1>
+
+      {/* Buttons: Create/Enter Operator, Consumer Login, Contributor Map */}
+      <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mb-8">
+        <button
+          className={
+            mode === "create"
+              ? "px-4 py-2 rounded bg-blue-600 text-white"
+              : "px-4 py-2 rounded bg-white text-blue-600 border border-blue-600"
+          }
+          onClick={() => {
+            setErrorMsg("");
+            setMode("create");
+          }}
+        >
+          Create Operator
+        </button>
+        <button
+          className={
+            mode === "enter"
+              ? "px-4 py-2 rounded bg-blue-600 text-white"
+              : "px-4 py-2 rounded bg-white text-blue-600 border border-blue-600"
+          }
+          onClick={() => {
+            setErrorMsg("");
+            setMode("enter");
+          }}
+        >
+          Enter Operator ID
+        </button>
+        <Link
+          href="/login"
+          className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 transition"
+        >
+          Consumer Login
+        </Link>
+        <Link
+          href="/map"
+          className="px-4 py-2 rounded bg-yellow-500 text-white hover:bg-yellow-600 transition"
+        >
+          Contributor Map
+        </Link>
+      </div>
+
+      {mode === "create" ? (
+        <form
+          className="w-full max-w-sm bg-white p-6 rounded-lg shadow-md"
+          onSubmit={handleCreateOperator}
+        >
+          <label className="block text-gray-700 mb-2" htmlFor="email">
+            Email
+          </label>
+          <input
+            id="email"
+            type="email"
+            required
+            className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+
+          <label className="block text-gray-700 mb-2" htmlFor="password">
+            Password
+          </label>
+          <input
+            id="password"
+            type="password"
+            required
+            className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Create &amp; Go to Map
+          </button>
+        </form>
+      ) : (
+        <form
+          className="w-full max-w-sm bg-white p-6 rounded-lg shadow-md"
+          onSubmit={handleEnterOperator}
+        >
+          <label className="block text-gray-700 mb-2" htmlFor="operatorId">
+            Existing Operator ID
+          </label>
+          <input
+            id="operatorId"
+            type="text"
+            required
+            className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+            value={operatorId}
+            onChange={(e) => setOperatorId(e.target.value)}
+          />
+          <button
+            type="submit"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
           >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            Go to Map
+          </button>
+        </form>
+      )}
+
+      {errorMsg && (
+        <p className="mt-4 text-red-600 text-sm text-center">{errorMsg}</p>
+      )}
     </div>
   );
 }

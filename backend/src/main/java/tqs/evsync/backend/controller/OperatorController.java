@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import tqs.evsync.backend.model.Operator;
 import tqs.evsync.backend.repository.OperatorRepository;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/operators")
 public class OperatorController {
