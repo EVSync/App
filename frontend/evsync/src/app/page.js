@@ -101,6 +101,20 @@ export default function Home() {
         >
           Contributor Map
         </Link>
+
+        {/* NEW: Consumer shortcuts */}
+        <Link
+          href="/consumer/reservations"
+          className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition"
+        >
+          My Reservations
+        </Link>
+        <Link
+          href="/consumer/sessions"
+          className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition"
+        >
+          My Sessions
+        </Link>
       </div>
 
       {mode === "create" ? (

@@ -38,7 +38,7 @@ export default function StationDetails() {
 
     async function fetchStationAndOutlets() {
       try {
-        // 1) Fetch station itself
+        // 1) Fetch the station itself
         const stationResp = await fetch(`${API_BASE}/charging-station/${stationId}`);
         if (!stationResp.ok) {
           throw new Error(`HTTP ${stationResp.status}: ${stationResp.statusText}`);
@@ -162,10 +162,11 @@ export default function StationDetails() {
       return;
     }
 
-    try {
-      // Build a minimal ChargingOutlet object with just its ID
-      const payload = { id };
+    // Build the minimal JSON body: { "id": <outletId> }
+    const payload = { id };
+    console.log("📤 PUT add-charging-outlet payload:", payload);
 
+    try {
       const resp = await fetch(
         `${API_BASE}/charging-station/${stationId}/add-charging-outlet`,
         {
@@ -188,17 +189,34 @@ export default function StationDetails() {
   // Create a brand-new outlet (POST /api/outlets/{stationId})
   async function handleCreateNewOutlet(e) {
     e.preventDefault();
+    setError(null);
+
+    // Ensure both fields are not blank:
     if (createdOutletCost === "" || createdOutletPower === "") {
-      alert("Please provide cost and max power");
+      alert("Please provide both cost and max power before submitting.");
       return;
     }
+
+    // Parse them to numbers:
+    const costNumber = parseFloat(createdOutletCost);
+    const powerNumber = parseInt(createdOutletPower, 10);
+
+    if (isNaN(costNumber) || isNaN(powerNumber)) {
+      alert("Cost per hour and max power must be valid numbers.");
+      return;
+    }
+
     try {
       const payload = {
         status: createdOutletStatus,
-        costPerHour: parseFloat(createdOutletCost),
-        maxPower: parseInt(createdOutletPower, 10),
+        costPerHour: costNumber,
+        maxPower: powerNumber,
         chargingStation: { id: Number(stationId) },
       };
+
+      // Log the payload so you can verify it in the browser console:
+      console.log("📤 POST create-outlet payload:", payload);
+
       const resp = await fetch(`${API_BASE}/api/outlets/${stationId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -376,6 +394,7 @@ export default function StationDetails() {
                 id="newOutletCost"
                 type="number"
                 step="0.01"
+                min="0"
                 placeholder="e.g. 2.50"
                 className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={createdOutletCost}
@@ -390,6 +409,7 @@ export default function StationDetails() {
               <input
                 id="newOutletPower"
                 type="number"
+                min="0"
                 placeholder="e.g. 22"
                 className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={createdOutletPower}
