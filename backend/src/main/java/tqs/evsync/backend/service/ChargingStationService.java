@@ -136,7 +136,8 @@ public class ChargingStationService {
         ChargingStation station = chargingRepo.findById(stationId)
             .orElseThrow(() -> new RuntimeException("Charging station not found"));
     
-        station.addChargingOutlet(outlet);    
+        station.addChargingOutlet(outlet);   
+        outlet.setChargingStation(station); 
         return chargingRepo.save(station);
     }
     

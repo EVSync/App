@@ -64,4 +64,10 @@ public class SessionController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Session not found.");
         }
     }
+
+    @GetMapping("/history/{consumerId}")
+    public ResponseEntity<List<ChargingSession>> getChargingHistory(@PathVariable Long consumerId) {
+        List<ChargingSession> history = sessionService.getChargingHistoryByConsumerId(consumerId);
+        return ResponseEntity.ok(history);
+    }
 }

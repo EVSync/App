@@ -21,6 +21,9 @@ public class SessionService {
     private ChargingSessionRepository sessionRepository;
 
     @Autowired
+    private ChargingSessionRepository chargingSessionRepository;
+
+    @Autowired
     private ReservationRepository reservationRepository;
 
 
@@ -95,6 +98,15 @@ public class SessionService {
     public List<ChargingSession> getAllSessions(){
         return sessionRepository.findAll();
     }
+
+    public List<ChargingSession> getChargingHistoryByConsumerId(Long consumerId) {
+        return chargingSessionRepository.chargingHistoryById(consumerId);
+    }
+    public List<ChargingSession> getSessionsByConsumer(Consumer consumer) {
+    return chargingSessionRepository.findAllByReservation_Consumer((java.util.function.Consumer) consumer);
+}
+
+    
 
     public void deleteSession(Long id) {
         ChargingSession session = sessionRepository.findById(id)

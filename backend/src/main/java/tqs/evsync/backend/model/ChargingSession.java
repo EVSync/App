@@ -21,6 +21,8 @@ public class ChargingSession {
     @ManyToOne
     private Reservation reservation;
 
+    
+
     @ManyToOne
     private ChargingOutlet outlet;
 
