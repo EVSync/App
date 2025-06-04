@@ -14,6 +14,10 @@ jobs:
     runs-on: self-hosted
 
     steps:
+      - name: Pre-clean workspace to avoid permission issues
+        run: |
+          sudo rm -rf /home/bernardo.borges/actions-runner/_work/App/App/*
+      
       - name: Checkout repository
         uses: actions/checkout@v4
 
