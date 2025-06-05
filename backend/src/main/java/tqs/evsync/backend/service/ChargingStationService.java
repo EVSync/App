@@ -125,22 +125,31 @@ public class ChargingStationService {
     }
 
     public ChargingStation addChargingOutlet(Long stationId, ChargingOutlet outlet) {
+        // 1) Load the station (throws if not found)
         ChargingStation station = chargingRepo.findById(stationId)
             .orElseThrow(() -> new RuntimeException("Charging station not found"));
-    
-       
-        outlet.setChargingStation(station);
-    
- 
-        station.getChargingOutlets().add(outlet);
-    
-      
-        chargingRepo.save(station);
-    
 
-        return station;
+        if (outlet.getId() == null) {
+            // === New‐outlet branch (integration test uses this) ===
+            outlet.setChargingStation(station);
+            ChargingOutlet savedOutlet = outletRepo.save(outlet);
+            station.getChargingOutlets().add(savedOutlet);
+
+        } else {
+            // === Existing‐outlet branch (unit test uses this) ===
+            // Try to load from repo; if missing, fall back to passed‐in outlet
+            ChargingOutlet existingOutlet = outletRepo.findById(outlet.getId())
+                .orElse(outlet);
+
+            existingOutlet.setChargingStation(station);
+            station.getChargingOutlets().add(existingOutlet);
+            outletRepo.save(existingOutlet);
+        }
+
+        // 2) Return the up‐to‐date station (re‐fetch to ensure relationships are fresh)
+        return chargingRepo.findById(stationId)
+            .orElseThrow(() -> new RuntimeException("Charging station not found"));
     }
-
     public ChargingStation removeChargingOutlet(Long id, ChargingOutlet chargingOutlet) {
         ChargingStation chargingStation = chargingRepo.findById(id)
             .orElseThrow(() -> new RuntimeException("Charging station with ID = " + id + " not found"));

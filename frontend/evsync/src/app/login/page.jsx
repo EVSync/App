@@ -7,37 +7,87 @@ import Link from "next/link";
 
 export default function ConsumerLogin() {
   const router = useRouter();
+
+  // Form fields & error state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  useEffect(() => {
-    // If already “logged in” (has token), redirect to /reservations
-    const consumerId = localStorage.getItem("consumerId");
-    if (consumerId) {
-      router.push("/reservations");
-    }
-  }, [router]);
+  // Keep track of whether a consumer is currently “logged in”
+  const [consumerId, setConsumerId] = useState(null);
 
+  useEffect(() => {
+    // On mount, read localStorage for existing consumerId
+    const savedConsumer = localStorage.getItem("consumerId");
+    if (savedConsumer) {
+      setConsumerId(savedConsumer);
+    }
+  }, []);
+
+  // When the user submits the login form:
   function handleLogin(e) {
     e.preventDefault();
     setErrorMsg("");
 
-    // Read saved users from localStorage
+    // Read out “consumers” from localStorage (array of {id,email,password} objects)
     const usersJson = localStorage.getItem("consumers") || "[]";
     const users = JSON.parse(usersJson);
 
-    const found = users.find((u) => u.email === email.trim() && u.password === password.trim());
+    // Look for a matching user
+    const found = users.find(
+      (u) =>
+        u.email === email.trim() &&
+        u.password === password.trim()
+    );
     if (!found) {
       setErrorMsg("Invalid email or password.");
       return;
     }
 
-    // “Log in” by saving consumerId (just use the timestamp-based id)
+    // “Log in” by saving consumerId
     localStorage.setItem("consumerId", found.id);
-    router.push("/reservations");
+    setConsumerId(found.id);
+
+    // Redirect to the consumer map page
+    router.push("/map");
   }
 
+  // When the user clicks “Log Out”:
+  function handleLogout() {
+    localStorage.removeItem("consumerId");
+    setConsumerId(null);
+    // Clear any residual form fields or messages
+    setEmail("");
+    setPassword("");
+    setErrorMsg("");
+  }
+
+  // --------------------------
+  // If a consumerId is already present, show a “Logged in” view + a Log Out button.
+  // Otherwise, show the normal login form.
+  // --------------------------
+  if (consumerId) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-100 px-4">
+        <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md text-center">
+          <h2 className="text-2xl font-semibold mb-4">You are already logged in</h2>
+          <p className="mb-6">
+            Logged in as <span className="font-medium">{consumerId}</span>
+          </p>
+          <button
+            onClick={handleLogout}
+            className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --------------------------
+  // Otherwise: render the login form
+  // --------------------------
   return (
     <div className="flex h-screen items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
