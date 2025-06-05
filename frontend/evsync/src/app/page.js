@@ -13,9 +13,9 @@ export default function Home() {
   const [operatorId, setOperatorId] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const API_BASE = "http://localhost:8080"; // adjust if needed
+  const API_BASE = "http://localhost:8080"; 
 
-  // 1) Create a new operator
+
   async function handleCreateOperator(e) {
     e.preventDefault();
     setErrorMsg("");
@@ -35,9 +35,10 @@ export default function Home() {
         throw new Error(text || response.statusText);
       }
 
-      const data = await response.json(); // e.g. { id: 5, ... }
+      const data = await response.json(); // e.g. { id: 5, email: "...", ... }
       const newId = data.id;
       if (!newId) throw new Error("No operator ID returned");
+      // Always push a primitive string or number in the URL—never the full object
       router.push(`/map?operatorId=${newId}`);
     } catch (err) {
       console.error("Create operator error:", err);
@@ -45,7 +46,7 @@ export default function Home() {
     }
   }
 
-  // 2) Enter existing operator ID
+  // 2) Enter an existing operator ID manually
   function handleEnterOperator(e) {
     e.preventDefault();
     setErrorMsg("");
@@ -54,6 +55,7 @@ export default function Home() {
       setErrorMsg("Enter a valid numeric operator ID");
       return;
     }
+    // We push only the primitive number/string
     router.push(`/map?operatorId=${parsed}`);
   }
 
@@ -61,7 +63,10 @@ export default function Home() {
     <div className="flex flex-col items-center justify-center h-screen bg-gray-50 px-4">
       <h1 className="text-4xl font-bold mb-6">Aveiro EV Map</h1>
 
-      {/* Buttons: Create/Enter Operator, Consumer Login, Contributor Map */}
+      {/* 
+        Buttons: Create/Enter Operator, Consumer Login, Contributor Map, 
+        plus Consumer shortcuts (Reservations / Sessions)
+      */}
       <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mb-8">
         <button
           className={
@@ -102,7 +107,7 @@ export default function Home() {
           Contributor Map
         </Link>
 
-        {/* NEW: Consumer shortcuts */}
+        {/* Consumer shortcuts always shown (they’ll navigate to their pages) */}
         <Link
           href="/consumer/reservations"
           className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition"
