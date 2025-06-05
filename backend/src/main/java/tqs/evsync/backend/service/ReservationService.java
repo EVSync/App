@@ -39,7 +39,22 @@ public class ReservationService {
             throw new IllegalArgumentException("Consumer or Station not found.");
         }
     
+        Consumer consumer = consumerOpt.get(); 
         ChargingStation station = stationOpt.get();
+    
+        boolean hasActive = consumer.getReservations().stream()
+            .anyMatch(r -> r.getStatus() == ReservationStatus.PENDING || r.getStatus() == ReservationStatus.CONFIRMED);
+    
+        if (hasActive) {
+            throw new IllegalStateException("O consumidor já tem uma reserva ativa.");
+        }
+    
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime requestedStart = LocalDateTime.parse(startTime);
+        if (requestedStart.isBefore(now)) {
+            throw new IllegalArgumentException("Não é possível criar reserva para uma data/hora passada.");
+        }
+    
         ChargingOutlet selectedOutlet = findAvailableOutlet(station, startTime, duration);
     
         if (selectedOutlet == null) {
@@ -47,7 +62,7 @@ public class ReservationService {
         }
     
         Reservation r = new Reservation();
-        r.setConsumer(consumerOpt.get());
+        r.setConsumer(consumer);
         r.setStartTime(startTime);
         r.setDuration(duration);
         r.setStatus(ReservationStatus.PENDING);
@@ -56,6 +71,7 @@ public class ReservationService {
     
         return reservationRepo.save(r);
     }
+    
 
     private ChargingOutlet findAvailableOutlet(ChargingStation station, String startTime, Double duration) {
         LocalDateTime requestedStart = LocalDateTime.parse(startTime);
