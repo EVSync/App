@@ -15,4 +15,6 @@ EVSync is an integrated platform designed to streamline the electric vehicle (EV
 
 ### Bookmarks
 Backlog ([Jira](https://fangsenpai.atlassian.net/jira/software/projects/TQS/summary))
-API Documentation
+
+### Changes made Post-Presentation
+Added XRAY test list to Jira, having both Integration and Performance tests marked in the platform
