@@ -14,16 +14,28 @@ jobs:
     name: EVSync Deploy
     runs-on: self-hosted
 
+
     steps:
+      - name: Pre-clean workspace to avoid permission issues
+        run: |
+          sudo rm -rf /home/bernardo.borges/actions-runner/_work/App/App/*
+      
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create .env file with secrets
+      - name: Confirm branch and environment
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/dev" ]; then
+            echo "Only deploys from dev branch allowed."
+            exit 1
+          fi
+      - name: Create .env file with dev secrets
         run: |
           echo "DB_URL=${{ secrets.DB_NAME }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
           echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
-
+          echo "SPRING_PROFILES_ACTIVE=${{ secrets.SPRING_PROFILES_ACTIVE }}" >> .env
+          echo "NEXT_PUBLIC_URL=${{ secrets.NEXT_PUBLIC_URL }}" >> .env
       - name: Stop previous containers
         run: docker compose --env-file .env -f docker-compose.yml down
 
@@ -35,3 +47,13 @@ jobs:
 
       - name: Start services with Docker Compose
         run: docker compose --env-file .env -f docker-compose.yml up -d --build
+
+      - name: Verify services are running
+        run: docker compose -f docker-compose.yml ps
+
+        
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-jar-dev
+          path: target/*.jar
