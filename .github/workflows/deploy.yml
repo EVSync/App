@@ -25,8 +25,8 @@ jobs:
 
       - name: Confirm branch and environment
         run: |
-          if [ "$GITHUB_REF" != "refs/heads/dev" ]; then
-            echo "Only deploys from dev branch allowed."
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Deploys are only allowed from main branches."
             exit 1
           fi
       - name: Create .env file with dev secrets
