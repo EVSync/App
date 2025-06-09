@@ -3,25 +3,27 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function StationDetails() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
+  const stationId = searchParams.get("stationId");
+  const operatorId = searchParams.get("operatorId");
+  if (!stationId || !operatorId) {
+    router.push("/");
+    return null;
+  }
+
   const [station, setStation] = useState(null);
-  const [outlets, setOutlets] = useState([]);          // holds ChargingOutlet[]
+  const [attachedOutlets, setAttachedOutlets] = useState([]);
+  const [allOutlets, setAllOutlets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const stationId = searchParams.get("stationId");
-  const operatorId = searchParams.get("operatorId");
-  const API_BASE = "http://localhost:8080";
-
   // For changing station status
   const [newStatus, setNewStatus] = useState("");
-
-  // For adding an existing outlet by ID
-  const [newOutletId, setNewOutletId] = useState("");
 
   // For creating a brand-new outlet
   const [creatingOutlet, setCreatingOutlet] = useState(false);
@@ -29,300 +31,214 @@ export default function StationDetails() {
   const [createdOutletCost, setCreatedOutletCost] = useState("");
   const [createdOutletPower, setCreatedOutletPower] = useState("");
 
-  // On mount: fetch station and its outlets
+  // Fetch station, attached outlets, and all outlets
   useEffect(() => {
-    if (!stationId || !operatorId) {
-      router.push("/");
-      return;
-    }
-
-    async function fetchStationAndOutlets() {
+    async function fetchData() {
       try {
-        // 1) Fetch the station itself
-        const stationResp = await fetch(`${API_BASE}/charging-station/${stationId}`);
-        if (!stationResp.ok) {
-          throw new Error(`HTTP ${stationResp.status}: ${stationResp.statusText}`);
-        }
-        const stationData = await stationResp.json();
-        setStation(stationData);
-        setNewStatus(stationData.status || "");
+        // 1) Station
+        const st = await fetch(`${API_BASE_URL.CHARGING_STATION}/${stationId}`);
+        if (!st.ok) throw new Error("Failed to load station");
+        const stData = await st.json();
+        setStation(stData);
+        setNewStatus(stData.status);
 
-        // 2) Fetch outlets belonging to this station
-        const outletsResp = await fetch(
-          `${API_BASE}/charging-station/ChargingOutlets/${stationId}`
+        // 2) Attached outlets
+        const att = await fetch(
+          API_BASE_URL.CHARGING_STATION_OUTLETS(stationId)
         );
-        if (!outletsResp.ok) {
-          throw new Error(`HTTP ${outletsResp.status}: ${outletsResp.statusText}`);
-        }
-        const outletsData = await outletsResp.json();
-        setOutlets(outletsData);
+        if (!att.ok) throw new Error("Failed to load outlets");
+        setAttachedOutlets(await att.json());
+
+        // 3) All outlets
+        const all = await fetch(API_BASE_URL.OUTLET);
+        if (!all.ok) throw new Error("Failed to load all outlets");
+        setAllOutlets(await all.json());
       } catch (err) {
-        console.error("Error fetching station/outlets:", err);
-        setError("Could not load station or outlets.");
+        console.error(err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
     }
+    fetchData();
+  }, [stationId]);
 
-    fetchStationAndOutlets();
-  }, [stationId, operatorId, router]);
-
-  if (loading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <p className="text-lg">Loading station details…</p>
-      </div>
-    );
-  }
-  if (error) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
-  }
-  if (!station) {
-    return null;
-  }
-
-  // Helper: reload only the outlets list
-  async function reloadOutlets() {
+  // Helper: reload attached outlets
+  async function reloadAttached() {
     try {
       const resp = await fetch(
-        `${API_BASE}/charging-station/ChargingOutlets/${stationId}`
+        API_BASE_URL.CHARGING_STATION_OUTLETS(stationId)
       );
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}: ${resp.statusText}`);
-      }
-      const data = await resp.json();
-      setOutlets(data);
+      if (!resp.ok) throw new Error("Reload failed");
+      setAttachedOutlets(await resp.json());
     } catch (err) {
-      console.error("Error reloading outlets:", err);
-      alert("Could not reload outlets: " + (err.message || "Unknown"));
+      console.error(err);
+      alert("Could not reload outlets: " + err.message);
     }
   }
 
-  // Change station’s status
+  // 1) Change status
   async function handleChangeStatus(e) {
     e.preventDefault();
-    if (!newStatus || newStatus === station.status) return;
-
+    if (newStatus === station.status) return;
     try {
       const resp = await fetch(
-        `${API_BASE}/charging-station/${stationId}/status?status=${encodeURIComponent(
+        `${API_BASE_URL.CHARGING_STATION}/${stationId}/status?status=${encodeURIComponent(
           newStatus
         )}`,
         { method: "PUT" }
       );
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
-      }
-      // Reload station
-      const updatedResp = await fetch(`${API_BASE}/charging-station/${stationId}`);
-      const updatedData = await updatedResp.json();
-      setStation(updatedData);
-      setNewStatus(updatedData.status);
+      if (!resp.ok) throw new Error(await resp.text());
+      const updated = await resp.json();
+      setStation(updated);
+      setNewStatus(updated.status);
     } catch (err) {
-      console.error("Error updating status:", err);
-      alert("Could not update status: " + (err.message || "Unknown"));
+      console.error(err);
+      alert("Status update failed: " + err.message);
     }
   }
 
-  // Remove an existing outlet (PUT /charging-station/{id}/remove-charging-outlet)
-  async function handleRemoveOutlet(outletId) {
+  // 2) Remove outlet
+  async function handleRemoveOutlet(id) {
     try {
-      // Build a minimal ChargingOutlet object with just its ID
-      const payload = { id: outletId };
-
       const resp = await fetch(
-        `${API_BASE}/charging-station/${stationId}/remove-charging-outlet`,
+        `${API_BASE_URL.CHARGING_STATION}/${stationId}/remove-charging-outlet`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ id }),
         }
       );
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
-      }
-      // After removal, reload outlets list
-      await reloadOutlets();
+      if (!resp.ok) throw new Error(await resp.text());
+      await reloadAttached();
     } catch (err) {
-      console.error("Error removing outlet:", err);
-      alert("Could not remove outlet: " + (err.message || "Unknown"));
+      console.error(err);
+      alert("Remove failed: " + err.message);
     }
   }
 
-  // Add an existing outlet by ID (PUT /charging-station/{id}/add-charging-outlet)
-  async function handleAddExistingOutlet(e) {
-    e.preventDefault();
-    const id = parseInt(newOutletId, 10);
-    if (isNaN(id) || id <= 0) {
-      alert("Enter a valid numeric Outlet ID");
-      return;
-    }
-
-    // Build the minimal JSON body: { "id": <outletId> }
-    const payload = { id };
-    console.log("📤 PUT add-charging-outlet payload:", payload);
-
+  // 3) Add existing outlet by choosing from list
+  async function handleAddOutlet(id) {
     try {
       const resp = await fetch(
-        `${API_BASE}/charging-station/${stationId}/add-charging-outlet`,
+        `${API_BASE_URL.CHARGING_STATION}/${stationId}/add-charging-outlet`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ id }),
         }
       );
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
-      }
-      setNewOutletId("");
-      await reloadOutlets();
+      if (!resp.ok) throw new Error(await resp.text());
+      await reloadAttached();
     } catch (err) {
-      console.error("Error adding existing outlet:", err);
-      alert("Could not add outlet: " + (err.message || "Unknown"));
+      console.error(err);
+      alert("Add failed: " + err.message);
     }
   }
 
-  // Create a brand-new outlet (POST /api/outlets/{stationId})
+  // 4) Create new outlet
   async function handleCreateNewOutlet(e) {
     e.preventDefault();
-    setError(null);
-
-    // Ensure both fields are not blank:
-    if (createdOutletCost === "" || createdOutletPower === "") {
-      alert("Please provide both cost and max power before submitting.");
+    if (!createdOutletCost || !createdOutletPower) {
+      alert("Provide cost & power");
       return;
     }
-
-    // Parse them to numbers:
-    const costNumber = parseFloat(createdOutletCost);
-    const powerNumber = parseInt(createdOutletPower, 10);
-
-    if (isNaN(costNumber) || isNaN(powerNumber)) {
-      alert("Cost per hour and max power must be valid numbers.");
-      return;
-    }
-
     try {
       const payload = {
         status: createdOutletStatus,
-        costPerHour: costNumber,
-        maxPower: powerNumber,
+        costPerHour: parseFloat(createdOutletCost),
+        maxPower: parseInt(createdOutletPower, 10),
         chargingStation: { id: Number(stationId) },
       };
-
-      // Log the payload so you can verify it in the browser console:
-      console.log("📤 POST create-outlet payload:", payload);
-
-      const resp = await fetch(`${API_BASE}/api/outlets/${stationId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
-      }
+      const resp = await fetch(
+        `${API_BASE_URL.OUTLET}/${stationId}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      if (!resp.ok) throw new Error(await resp.text());
       setCreatingOutlet(false);
-      setCreatedOutletStatus("AVAILABLE");
       setCreatedOutletCost("");
       setCreatedOutletPower("");
-      await reloadOutlets();
+      await reloadAttached();
+      // Refresh allOutlets too:
+      const all = await fetch(API_BASE_URL.OUTLET);
+      setAllOutlets(await all.json());
     } catch (err) {
-      console.error("Error creating new outlet:", err);
-      alert("Could not create outlet: " + (err.message || "Unknown"));
+      console.error(err);
+      alert("Creation failed: " + err.message);
     }
   }
 
-  // Delete this station
-  async function handleDeleteStation() {
-    if (!confirm("Are you sure you want to DELETE this station?")) return;
+  // 5) Delete station
+  async function handleDelete() {
+    if (!confirm("Delete this station?")) return;
     try {
-      const resp = await fetch(`${API_BASE}/charging-station/${stationId}`, {
-        method: "DELETE",
-      });
-      if (!resp.ok) {
-        throw new Error(`HTTP ${resp.status}: ${await resp.text()}`);
-      }
+      const resp = await fetch(
+        `${API_BASE_URL.CHARGING_STATION}/${stationId}`,
+        { method: "DELETE" }
+      );
+      if (!resp.ok) throw new Error(await resp.text());
       router.push(`/map?operatorId=${operatorId}`);
     } catch (err) {
-      console.error("Error deleting station:", err);
-      alert("Could not delete station: " + (err.message || "Unknown"));
+      console.error(err);
+      alert("Delete failed: " + err.message);
     }
   }
 
+  if (loading) {
+    return <p className="p-6">Loading…</p>;
+  }
+  if (error) {
+    return <p className="p-6 text-red-600">{error}</p>;
+  }
+
+  // Compute unattached outlets list
+  const toAdd = allOutlets.filter(
+    (o) => !attachedOutlets.some((att) => att.id === o.id)
+  );
+
   return (
-    <div className="min-h-screen w-full p-6 bg-gray-100">
-      <div className="max-w-2xl mx-auto bg-white p-6 rounded-lg shadow-md">
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="mx-auto max-w-2xl bg-white p-6 rounded-lg shadow-md">
         <h2 className="text-2xl font-semibold mb-4">
           Configure Station #{station.id}
         </h2>
-        <p className="mb-2">
-          <strong>Coordinates:</strong>{" "}
-          {station.latitude.toFixed(5)}, {station.longitude.toFixed(5)}
-        </p>
-        <p className="mb-4">
-          <strong>Operator ID:</strong> {station.operator?.id || "N/A"}
-        </p>
 
-        {/* Change Station Status */}
-        <form
-          className="mb-6 flex items-center space-x-4"
-          onSubmit={handleChangeStatus}
-        >
-          <label className="block text-gray-700 font-medium" htmlFor="status">
-            Status:
-          </label>
+        {/* Status */}
+        <form className="mb-6 flex items-center" onSubmit={handleChangeStatus}>
+          <label className="mr-2">Status:</label>
           <select
-            id="status"
-            className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
             value={newStatus}
             onChange={(e) => setNewStatus(e.target.value)}
+            className="border px-2 py-1"
           >
-            <option value="AVAILABLE">AVAILABLE</option>
-            <option value="OCCUPIED">OCCUPIED</option>
-            <option value="OFFLINE">OFFLINE</option>
-            <option value="MAINTENANCE">MAINTENANCE</option>
+            {["AVAILABLE", "OCCUPIED", "OFFLINE", "MAINTENANCE"].map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
           </select>
-          <button
-            type="submit"
-            className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-          >
+          <button type="submit" className="ml-4 bg-green-600 text-white px-3 py-1 rounded">
             Change
           </button>
         </form>
 
-        {/* List of Charging Outlets */}
+        {/* Attached Outlets */}
         <div className="mb-6">
-          <h3 className="text-xl font-semibold mb-2">Charging Outlets</h3>
-          {outlets && outlets.length > 0 ? (
-            <ul className="list-disc pl-6 space-y-2">
-              {outlets.map((outlet) => (
-                <li
-                  key={outlet.id}
-                  className="bg-gray-50 p-3 rounded flex justify-between items-center"
-                >
-                  <div>
-                    <p className="font-medium">Outlet #{outlet.id}</p>
-                    <p>
-                      Status: <span className="font-semibold">{outlet.status}</span>
-                    </p>
-                    <p>
-                      Cost/hr:{" "}
-                      <span className="font-semibold">
-                        {outlet.costPerHour.toFixed(2)}
-                      </span>
-                    </p>
-                    <p>
-                      Max Power:{" "}
-                      <span className="font-semibold">{outlet.maxPower} kW</span>
-                    </p>
-                  </div>
+          <h3 className="text-xl font-semibold mb-2">Attached Outlets</h3>
+          {attachedOutlets.length > 0 ? (
+            <ul className="space-y-2">
+              {attachedOutlets.map((o) => (
+                <li key={o.id} className="flex justify-between p-2 bg-gray-50 rounded">
+                  <span>
+                    #{o.id} — {o.status}, €{o.costPerHour}/h, {o.maxPower}kW
+                  </span>
                   <button
-                    onClick={() => handleRemoveOutlet(outlet.id)}
-                    className="text-red-600 hover:text-red-800 text-sm"
+                    onClick={() => handleRemoveOutlet(o.id)}
+                    className="text-red-600"
                   >
                     Remove
                   </button>
@@ -330,122 +246,96 @@ export default function StationDetails() {
               ))}
             </ul>
           ) : (
-            <p className="text-gray-600">No outlets attached to this station.</p>
+            <p>No outlets attached.</p>
           )}
         </div>
-
-        {/* Add Existing Outlet */}
-        <form onSubmit={handleAddExistingOutlet} className="mb-6 flex space-x-2">
-          <input
-            type="text"
-            placeholder="Existing Outlet ID to Add"
-            className="border px-3 py-2 rounded w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            value={newOutletId}
-            onChange={(e) => setNewOutletId(e.target.value)}
-          />
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-          >
-            Add Outlet
-          </button>
-        </form>
 
         {/* Create New Outlet */}
         {!creatingOutlet ? (
           <button
             onClick={() => setCreatingOutlet(true)}
-            className="mb-6 w-full bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition"
+            className="mb-6 w-full bg-indigo-600 text-white py-2 rounded"
           >
-            Create New Charging Outlet
+            Create New Outlet
           </button>
         ) : (
-          <form
-            onSubmit={handleCreateNewOutlet}
-            className="mb-8 bg-gray-50 p-4 rounded-lg space-y-4"
-          >
-            <h4 className="text-lg font-medium">New Outlet Details</h4>
-
-            <div className="flex flex-col">
-              <label
-                className="block text-gray-700 mb-1"
-                htmlFor="newOutletStatus"
-              >
-                Outlet Status:
-              </label>
+          <form onSubmit={handleCreateNewOutlet} className="mb-6 space-y-2 bg-gray-50 p-4 rounded">
+            <div>
+              <label>Status:</label>
               <select
-                id="newOutletStatus"
-                className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={createdOutletStatus}
                 onChange={(e) => setCreatedOutletStatus(e.target.value)}
+                className="ml-2 border px-2 py-1"
               >
-                <option value="AVAILABLE">AVAILABLE</option>
-                <option value="OCCUPIED">OCCUPIED</option>
-                <option value="OFFLINE">OFFLINE</option>
-                <option value="MAINTENANCE">MAINTENANCE</option>
+                {["AVAILABLE", "OCCUPIED", "OFFLINE", "MAINTENANCE"].map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
             </div>
-
-            <div className="flex flex-col">
-              <label className="block text-gray-700 mb-1" htmlFor="newOutletCost">
-                Cost per Hour (€):
-              </label>
+            <div>
+              <label>Cost (€):</label>
               <input
-                id="newOutletCost"
                 type="number"
                 step="0.01"
-                min="0"
-                placeholder="e.g. 2.50"
-                className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={createdOutletCost}
                 onChange={(e) => setCreatedOutletCost(e.target.value)}
+                className="ml-2 border px-2 py-1"
               />
             </div>
-
-            <div className="flex flex-col">
-              <label className="block text-gray-700 mb-1" htmlFor="newOutletPower">
-                Max Power (kW):
-              </label>
+            <div>
+              <label>Power (kW):</label>
               <input
-                id="newOutletPower"
                 type="number"
-                min="0"
-                placeholder="e.g. 22"
-                className="border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
                 value={createdOutletPower}
                 onChange={(e) => setCreatedOutletPower(e.target.value)}
+                className="ml-2 border px-2 py-1"
               />
             </div>
-
-            <div className="flex space-x-2">
-              <button
-                type="submit"
-                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
-              >
-                Create &amp; Attach
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCreatingOutlet(false);
-                  setCreatedOutletStatus("AVAILABLE");
-                  setCreatedOutletCost("");
-                  setCreatedOutletPower("");
-                }}
-                className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition"
-              >
-                Cancel
-              </button>
-            </div>
+            <button type="submit" className="bg-green-600 text-white px-3 py-1 rounded">
+              Create & Attach
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreatingOutlet(false)}
+              className="ml-2 bg-gray-400 text-white px-3 py-1 rounded"
+            >
+              Cancel
+            </button>
           </form>
         )}
 
+        {/* Available Outlets to Add */}
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold mb-2">Available Outlets to Add</h3>
+          {toAdd.length > 0 ? (
+            <ul className="space-y-2">
+              {toAdd.map((o) => (
+                <li key={o.id} className="flex justify-between p-2 bg-gray-50 rounded">
+                  <span>
+                    #{o.id} — {o.status}, €{o.costPerHour}/h, {o.maxPower}kW
+                  </span>
+                  <button
+                    onClick={() => handleAddOutlet(o.id)}
+                    className="text-blue-600"
+                  >
+                    Add
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No available outlets to add.</p>
+          )}
+        </div>
+
         {/* Delete Station */}
         <button
-          onClick={handleDeleteStation}
-          className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
+          onClick={handleDelete}
+          className="w-full bg-red-600 text-white py-2 rounded"
         >
-          Delete This Station
+          Delete Station
         </button>
       </div>
     </div>

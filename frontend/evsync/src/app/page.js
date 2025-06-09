@@ -3,189 +3,245 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function Home() {
   const router = useRouter();
-  const [mode, setMode] = useState("create"); // "create" or "enter"
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [operatorId, setOperatorId] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
 
-  const API_BASE = "http://localhost:8080"; 
+  // ── Consumer state ──
+  const [cMode,    setCMode]    = useState("create"); // "create" or "enter"
+  const [cEmail,   setCEmail]   = useState("");
+  const [cPassword,setCPassword]= useState("");
+  const [cIdInput, setCIdInput] = useState("");
+  const [cError,   setCError]   = useState("");
 
+  // ── Operator state ──
+  const [oMode,    setOMode]    = useState("create");
+  const [oEmail,   setOEmail]   = useState("");
+  const [oPassword,setOPassword]= useState("");
+  const [oIdInput, setOIdInput] = useState("");
+  const [oError,   setOError]   = useState("");
 
-  async function handleCreateOperator(e) {
+  // — Consumer create or enter ID —
+  async function handleConsumerCreate(e) {
     e.preventDefault();
-    setErrorMsg("");
+    setCError("");
     try {
-      const response = await fetch(`${API_BASE}/api/operators`, {
+      const resp = await fetch(API_BASE_URL.CONSUMER, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email.trim(),
-          password: password.trim(),
+          email:    cEmail.trim(),
+          password: cPassword.trim()
+        }),
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      const consumer = await resp.json();
+      router.push(`/map?consumerId=${consumer.id}`);
+    } catch (err) {
+      console.error(err);
+      setCError(err.message || "Failed to create consumer");
+    }
+  }
+
+  function handleConsumerEnter(e) {
+    e.preventDefault();
+    setCError("");
+    const idNum = parseInt(cIdInput, 10);
+    if (!idNum || idNum <= 0) {
+      setCError("Enter a valid consumer ID");
+      return;
+    }
+    router.push(`/map?consumerId=${idNum}`);
+  }
+
+  // — Operator create or enter ID —
+  async function handleOperatorCreate(e) {
+    e.preventDefault();
+    setOError("");
+    try {
+      const resp = await fetch(API_BASE_URL.OPERATOR, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email:         oEmail.trim(),
+          password:      oPassword.trim(),
           operatorType: "OPERATOR",
         }),
       });
-
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || response.statusText);
-      }
-
-      const data = await response.json(); // e.g. { id: 5, email: "...", ... }
-      const newId = data.id;
-      if (!newId) throw new Error("No operator ID returned");
-      // Always push a primitive string or number in the URL—never the full object
-      router.push(`/map?operatorId=${newId}`);
+      if (!resp.ok) throw new Error(await resp.text());
+      const op = await resp.json();
+      router.push(`/map?operatorId=${op.id}`);
     } catch (err) {
-      console.error("Create operator error:", err);
-      setErrorMsg("Failed to create operator: " + (err.message || "Unknown"));
+      console.error(err);
+      setOError(err.message || "Failed to create operator");
     }
   }
 
-  // 2) Enter an existing operator ID manually
-  function handleEnterOperator(e) {
+  function handleOperatorEnter(e) {
     e.preventDefault();
-    setErrorMsg("");
-    const parsed = parseInt(operatorId, 10);
-    if (isNaN(parsed) || parsed <= 0) {
-      setErrorMsg("Enter a valid numeric operator ID");
+    setOError("");
+    const idNum = parseInt(oIdInput, 10);
+    if (!idNum || idNum <= 0) {
+      setOError("Enter a valid operator ID");
       return;
     }
-    // We push only the primitive number/string
-    router.push(`/map?operatorId=${parsed}`);
+    router.push(`/map?operatorId=${idNum}`);
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-50 px-4">
-      <h1 className="text-4xl font-bold mb-6">Aveiro EV Map</h1>
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-50 p-4 space-y-8">
+      <h1 className="text-4xl font-bold">Aveiro EV Map</h1>
 
-      {/* 
-        Buttons: Create/Enter Operator, Consumer Login, Contributor Map, 
-        plus Consumer shortcuts (Reservations / Sessions)
-      */}
-      <div className="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0 mb-8">
-        <button
-          className={
-            mode === "create"
-              ? "px-4 py-2 rounded bg-blue-600 text-white"
-              : "px-4 py-2 rounded bg-white text-blue-600 border border-blue-600"
-          }
-          onClick={() => {
-            setErrorMsg("");
-            setMode("create");
-          }}
-        >
-          Create Operator
-        </button>
-        <button
-          className={
-            mode === "enter"
-              ? "px-4 py-2 rounded bg-blue-600 text-white"
-              : "px-4 py-2 rounded bg-white text-blue-600 border border-blue-600"
-          }
-          onClick={() => {
-            setErrorMsg("");
-            setMode("enter");
-          }}
-        >
-          Enter Operator ID
-        </button>
-        <Link
-          href="/login"
-          className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700 transition"
-        >
-          Consumer Login
-        </Link>
-        <Link
-          href="/map"
-          className="px-4 py-2 rounded bg-yellow-500 text-white hover:bg-yellow-600 transition"
-        >
-          Contributor Map
-        </Link>
+      {/* ── Consumer Panel ── */}
+      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow">
+        <h2 className="text-2xl font-semibold mb-4 text-center">Consumer</h2>
+        <div className="flex justify-center space-x-4 mb-4">
+          <button
+            className={cMode === "create"
+              ? "px-4 py-2 bg-green-600 text-white rounded"
+              : "px-4 py-2 border rounded"}
+            onClick={() => { setCMode("create"); setCError(""); }}
+          >
+            Create
+          </button>
+          <button
+            className={cMode === "enter"
+              ? "px-4 py-2 bg-green-600 text-white rounded"
+              : "px-4 py-2 border rounded"}
+            onClick={() => { setCMode("enter"); setCError(""); }}
+          >
+            Enter ID
+          </button>
+        </div>
 
-        {/* Consumer shortcuts always shown (they’ll navigate to their pages) */}
-        <Link
-          href="/consumer/reservations"
-          className="px-4 py-2 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition"
-        >
-          My Reservations
-        </Link>
-        <Link
-          href="/consumer/sessions"
-          className="px-4 py-2 rounded bg-purple-600 text-white hover:bg-purple-700 transition"
-        >
-          My Sessions
-        </Link>
+        {cMode === "create" ? (
+          <form onSubmit={handleConsumerCreate} className="space-y-4">
+            <div>
+              <label className="block mb-1">Email</label>
+              <input
+                type="email"
+                required
+                value={cEmail}
+                onChange={e => setCEmail(e.target.value)}
+                className="w-full px-3 py-2 border rounded"
+              />
+            </div>
+            <div>
+              <label className="block mb-1">Password</label>
+              <input
+                type="password"
+                required
+                value={cPassword}
+                onChange={e => setCPassword(e.target.value)}
+                className="w-full px-3 py-2 border rounded"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-green-600 text-white py-2 rounded"
+            >
+              Create & Go to Map
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleConsumerEnter} className="space-y-4">
+            <div>
+              <label className="block mb-1">Consumer ID</label>
+              <input
+                type="text"
+                required
+                value={cIdInput}
+                onChange={e => setCIdInput(e.target.value)}
+                className="w-full px-3 py-2 border rounded"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-green-600 text-white py-2 rounded"
+            >
+              Go to Map
+            </button>
+          </form>
+        )}
+
+        {cError && <p className="mt-2 text-red-600 text-center">{cError}</p>}
       </div>
 
-      {mode === "create" ? (
-        <form
-          className="w-full max-w-sm bg-white p-6 rounded-lg shadow-md"
-          onSubmit={handleCreateOperator}
-        >
-          <label className="block text-gray-700 mb-2" htmlFor="email">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            required
-            className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-
-          <label className="block text-gray-700 mb-2" htmlFor="password">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            required
-            className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-
+      {/* ── Operator Panel ── */}
+      <div className="w-full max-w-md bg-white p-6 rounded-lg shadow">
+        <h2 className="text-2xl font-semibold mb-4 text-center">Operator</h2>
+        <div className="flex justify-center space-x-4 mb-4">
           <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            className={oMode === "create"
+              ? "px-4 py-2 bg-blue-600 text-white rounded"
+              : "px-4 py-2 border rounded"}
+            onClick={() => { setOMode("create"); setOError(""); }}
           >
-            Create &amp; Go to Map
+            Create
           </button>
-        </form>
-      ) : (
-        <form
-          className="w-full max-w-sm bg-white p-6 rounded-lg shadow-md"
-          onSubmit={handleEnterOperator}
-        >
-          <label className="block text-gray-700 mb-2" htmlFor="operatorId">
-            Existing Operator ID
-          </label>
-          <input
-            id="operatorId"
-            type="text"
-            required
-            className="w-full mb-4 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
-            value={operatorId}
-            onChange={(e) => setOperatorId(e.target.value)}
-          />
           <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+            className={oMode === "enter"
+              ? "px-4 py-2 bg-blue-600 text-white rounded"
+              : "px-4 py-2 border rounded"}
+            onClick={() => { setOMode("enter"); setOError(""); }}
           >
-            Go to Map
+            Enter ID
           </button>
-        </form>
-      )}
+        </div>
 
-      {errorMsg && (
-        <p className="mt-4 text-red-600 text-sm text-center">{errorMsg}</p>
-      )}
+        {oMode === "create" ? (
+          <form onSubmit={handleOperatorCreate} className="space-y-4">
+            <div>
+              <label className="block mb-1">Email</label>
+              <input
+                type="email"
+                required
+                value={oEmail}
+                onChange={e => setOEmail(e.target.value)}
+                className="w-full px-3 py-2 border rounded"
+              />
+            </div>
+            <div>
+              <label className="block mb-1">Password</label>
+              <input
+                type="password"
+                required
+                value={oPassword}
+                onChange={e => setOPassword(e.target.value)}
+                className="w-full px-3 py-2 border rounded"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 rounded"
+            >
+              Create & Go to Map
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleOperatorEnter} className="space-y-4">
+            <div>
+              <label className="block mb-1">Operator ID</label>
+              <input
+                type="text"
+                required
+                value={oIdInput}
+                onChange={e => setOIdInput(e.target.value)}
+                className="w-full px-3 py-2 border rounded"
+              />
+            </div>
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 rounded"
+            >
+              Go to Map
+            </button>
+          </form>
+        )}
+
+        {oError && <p className="mt-2 text-red-600 text-center">{oError}</p>}
+      </div>
     </div>
   );
 }

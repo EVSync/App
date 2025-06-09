@@ -14,30 +14,14 @@ const AveiroMap = dynamic(() => import("@/components/AveiroMap"), {
 export default function MapPage() {
   const searchParams = useSearchParams();
   const [operatorCandidate, setOperatorCandidate] = useState(null);
+  const [consumerId, setConsumerId] = useState(null);
+  const [operatorId, setOperatorId] = useState(null);
 
   useEffect(() => {
-    // Grab raw ?operatorId= value from the URL.
-    const rawOp = searchParams.get("operatorId");
-    if (!rawOp) {
-      setOperatorCandidate(null);
-      return;
-    }
-
-    // Try to JSON.parse in case someone passed the entire operator object by mistake.
-    let parsed;
-    try {
-      parsed = JSON.parse(rawOp);
-    } catch {
-      parsed = rawOp;
-    }
-    setOperatorCandidate(parsed);
+    setOperatorId(searchParams.get("operatorId"));
+    setConsumerId(searchParams.get("consumerId"));
   }, [searchParams]);
 
-  // ── Important fix: make sure we do NOT treat `null` as an object ──
-  const operatorId =
-    operatorCandidate !== null && typeof operatorCandidate === "object"
-      ? operatorCandidate.id
-      : operatorCandidate;
 
   return (
     <div className="h-screen w-full flex flex-col">
@@ -47,24 +31,20 @@ export default function MapPage() {
       */}
       {!operatorId && (
         <div className="flex justify-end space-x-4 p-4 bg-gray-100 border-b">
-          <Link
-            href="/consumer/reservations"
-            className="px-3 py-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 transition text-sm"
-          >
-            My Reservations
-          </Link>
-          <Link
-            href="/consumer/sessions"
-            className="px-3 py-1 rounded bg-purple-600 text-white hover:bg-purple-700 transition text-sm"
-          >
-            My Sessions
-          </Link>
-        </div>
+        <Link href={`/consumer/reservations?consumerId=${consumerId}`}
+              className="px-3 py-1 bg-indigo-600 text-white rounded text-sm">
+          My Reservations
+        </Link>
+        <Link href={`/consumer/sessions?consumerId=${consumerId}`}
+              className="px-3 py-1 bg-purple-600 text-white rounded text-sm">
+          My Sessions
+        </Link>
+      </div>
       )}
 
       {/* The map fills the rest. Pass only the primitive operatorId down. */}
       <div className="flex-1">
-        <AveiroMap operatorId={operatorId} />
+        <AveiroMap operatorId={operatorId} consumerId={consumerId}/>
       </div>
     </div>
   );

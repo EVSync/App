@@ -1,99 +1,50 @@
 // src/app/login/page.jsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function ConsumerLogin() {
   const router = useRouter();
-
-  // Form fields & error state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Keep track of whether a consumer is currently “logged in”
-  const [consumerId, setConsumerId] = useState(null);
-
-  useEffect(() => {
-    // On mount, read localStorage for existing consumerId
-    const savedConsumer = localStorage.getItem("consumerId");
-    if (savedConsumer) {
-      setConsumerId(savedConsumer);
-    }
-  }, []);
-
-  // When the user submits the login form:
-  function handleLogin(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setErrorMsg("");
+    setLoading(true);
+    try {
+      // Always create (or authenticate) consumer on the fly
+      const resp = await fetch(`${API_BASE_URL.CONSUMER}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text || resp.statusText);
+      }
 
-    // Read out “consumers” from localStorage (array of {id,email,password} objects)
-    const usersJson = localStorage.getItem("consumers") || "[]";
-    const users = JSON.parse(usersJson);
-
-    // Look for a matching user
-    const found = users.find(
-      (u) =>
-        u.email === email.trim() &&
-        u.password === password.trim()
-    );
-    if (!found) {
-      setErrorMsg("Invalid email or password.");
-      return;
+      const consumer = await resp.json();
+      // Navigate to map with consumerId in query
+      router.push(`/map?consumerId=${consumer.id}`);
+    } catch (err) {
+      console.error("Consumer creation failed", err);
+      setErrorMsg(err.message || "Failed to create consumer");
+    } finally {
+      setLoading(false);
     }
-
-    // “Log in” by saving consumerId
-    localStorage.setItem("consumerId", found.id);
-    setConsumerId(found.id);
-
-    // Redirect to the consumer map page
-    router.push("/map");
   }
 
-  // When the user clicks “Log Out”:
-  function handleLogout() {
-    localStorage.removeItem("consumerId");
-    setConsumerId(null);
-    // Clear any residual form fields or messages
-    setEmail("");
-    setPassword("");
-    setErrorMsg("");
-  }
-
-  // --------------------------
-  // If a consumerId is already present, show a “Logged in” view + a Log Out button.
-  // Otherwise, show the normal login form.
-  // --------------------------
-  if (consumerId) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-gray-100 px-4">
-        <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md text-center">
-          <h2 className="text-2xl font-semibold mb-4">You are already logged in</h2>
-          <p className="mb-6">
-            Logged in as <span className="font-medium">{consumerId}</span>
-          </p>
-          <button
-            onClick={handleLogout}
-            className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition"
-          >
-            Log Out
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // --------------------------
-  // Otherwise: render the login form
-  // --------------------------
   return (
     <div className="flex h-screen items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-2xl font-semibold mb-4 text-center">Consumer Login</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-center">Enter as Consumer</h2>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-gray-700 mb-1">
               Email
@@ -105,6 +56,7 @@ export default function ConsumerLogin() {
               className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
             />
           </div>
 
@@ -119,6 +71,7 @@ export default function ConsumerLogin() {
               className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
             />
           </div>
 
@@ -126,18 +79,12 @@ export default function ConsumerLogin() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            disabled={loading}
+            className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
           >
-            Log In
+            {loading ? "Please wait..." : "Enter Map"}
           </button>
         </form>
-
-        <p className="mt-4 text-center text-gray-600">
-          Don’t have an account?{" "}
-          <Link href="/signup" className="text-blue-600 hover:underline">
-            Register here
-          </Link>
-        </p>
       </div>
     </div>
   );

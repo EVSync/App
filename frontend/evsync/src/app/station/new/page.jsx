@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function CreateStationPage() {
   const searchParams = useSearchParams();

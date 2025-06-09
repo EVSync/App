@@ -8,6 +8,8 @@ import jakarta.persistence.*;
 @DiscriminatorValue("CONSUMER")
 public class Consumer extends User {
 	private double wallet = 0;
+	
+
 
 	@JsonIgnore
 	@OneToMany(mappedBy = "consumer")
@@ -26,5 +28,6 @@ public class Consumer extends User {
 	public void setReservations(List<Reservation> reservations) {
 		this.reservations = reservations;
 	}
+
 	
 }
