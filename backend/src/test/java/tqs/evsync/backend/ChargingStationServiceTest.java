@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
@@ -25,8 +26,10 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class ChargingStationServiceTest {
 
     @Mock
@@ -54,12 +57,9 @@ class ChargingStationServiceTest {
     private Operator operator;
     private ChargingOutlet outlet;
 
+
     @BeforeEach
     void setUp() {
-        when(restTemplateBuilder.build()).thenReturn(restTemplate);
-        
-        osmService = new OpenStreetMapService(restTemplateBuilder);
-
         operator = new Operator();
         operator.setId(1L);
 
@@ -87,8 +87,8 @@ class ChargingStationServiceTest {
     void testGetStationById_NotFound() {
         when(stationRepo.findById(1L)).thenReturn(Optional.empty());
         
-        ChargingStation result = service.getStationById(1L);
-        assertNull(result);
+        assertThrows(RuntimeException.class, () -> service.getStationById(1L));
+        verify(stationRepo).findById(1L);
     }
 
     @Test
@@ -159,9 +159,58 @@ class ChargingStationServiceTest {
 
     @Test
     void testAddChargingStationWithAddress() {
-        // Need to complete test (runned with errors)
+        String testAddress = "Avenida da República, Lisboa";
+        double testLat = 38.736946;
+        double testLon = -9.142685;
+
+        when(operatorRepo.findById(1L)).thenReturn(Optional.of(operator));
+        when(osmService.geocode(testAddress))
+            .thenReturn(new OpenStreetMapService.Coordinates(testLat, testLon));
+        when(stationRepo.save(any(ChargingStation.class))).thenAnswer(inv -> {
+            ChargingStation s = inv.getArgument(0);
+            s.setId(1L);
+            return s;
+        });
+
+        // Execute and verify
+        ChargingStation result = service.addChargingStationWithAddress(testAddress, 1L);
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        verify(osmService).geocode(testAddress);
     }
 
+    @Test
+    void testAddChargingStationWithAddress_OperatorNotFound() {
+        Long invalidOperatorId = 99L;
+        when(operatorRepo.findById(invalidOperatorId)).thenReturn(Optional.empty());
+        
+        assertThrows(RuntimeException.class, () -> 
+            service.addChargingStationWithAddress("Any Address", invalidOperatorId));
+    }
+
+    @Test
+    void testAddChargingStationWithAddress_GeocodingFailed() {
+        String invalidAddress = "Invalid Address XYZ";
+        
+        when(operatorRepo.findById(1L)).thenReturn(Optional.of(operator));
+        when(osmService.geocode(invalidAddress))
+            .thenThrow(new RuntimeException("Geocoding failed"));
+        
+        assertThrows(RuntimeException.class, () ->
+            service.addChargingStationWithAddress(invalidAddress, 1L));
+    }
+
+    @Test
+    void testAddChargingStationWithAddress_NullAddress() {
+        assertThrows(IllegalArgumentException.class, () ->
+            service.addChargingStationWithAddress(null, 1L));
+    }
+
+    @Test
+    void testAddChargingStationWithAddress_EmptyAddress() {
+        assertThrows(IllegalArgumentException.class, () ->
+            service.addChargingStationWithAddress("", 1L));
+    }
 
     @Test
     void testUpdateChargingStationStatus() {
@@ -194,7 +243,6 @@ class ChargingStationServiceTest {
     @Test
     void testAddChargingOutlet() {
         when(stationRepo.findById(1L)).thenReturn(Optional.of(station));
-        when(outletRepo.findById(1L)).thenReturn(Optional.of(outlet));
         when(stationRepo.save(any(ChargingStation.class))).thenReturn(station);
         
         ChargingStation result = service.addChargingOutlet(1L, outlet);

@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,6 +19,7 @@ import tqs.evsync.backend.model.ChargingStation;
 import tqs.evsync.backend.model.enums.ChargingStationStatus;
 import tqs.evsync.backend.service.ChargingStationService;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @Controller
 @RequestMapping("/charging-station")
 public class ChargingStationController {
@@ -34,16 +36,26 @@ public class ChargingStationController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getChargingStationById(@PathVariable Long id) {
-        return ResponseEntity.ok(chargingStationService.getStationById(id));
+        try {
+            return ResponseEntity.ok(chargingStationService.getStationById(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    @GetMapping("/nearby")
-    public ResponseEntity<?> getChargingStationsNearby(@PathVariable double lat,@PathVariable double lon,@PathVariable double maxDistanceKm) {
+    @GetMapping("/nearby/{lat}/{lon}/{maxDistanceKm}")
+    public ResponseEntity<?> getChargingStationsNearby(
+            @PathVariable double lat,
+            @PathVariable double lon,
+            @PathVariable double maxDistanceKm) {
         return ResponseEntity.ok(chargingStationService.getStationsNear(lat, lon, maxDistanceKm));
     }
 
-    @GetMapping("/available-nearby")
-    public ResponseEntity<?> getAvailableChargingStationsNearby(@PathVariable double lat,@PathVariable double lon,@PathVariable double maxDistanceKm) {
+    @GetMapping("/available-nearby/{lat}/{lon}/{maxDistanceKm}")
+    public ResponseEntity<?> getAvailableChargingStationsNearby(
+            @PathVariable double lat,
+            @PathVariable double lon,
+            @PathVariable double maxDistanceKm) {
         return ResponseEntity.ok(chargingStationService.getAvailableStationsNear(lat, lon, maxDistanceKm));
     }
 
@@ -72,7 +84,7 @@ public class ChargingStationController {
         }
     }
     @PutMapping("/{id}/add-charging-outlet")
-    public ResponseEntity<?> addChargingOutlet(@PathVariable Long id, @RequestParam ChargingOutlet chargingOutlet) {
+    public ResponseEntity<?> addChargingOutlet(@PathVariable Long id, @RequestBody ChargingOutlet chargingOutlet) {
         try{
             ChargingStation updatedStation = chargingStationService.addChargingOutlet(id, chargingOutlet);
             return ResponseEntity.ok(updatedStation);
@@ -82,7 +94,7 @@ public class ChargingStationController {
         }
     }
     @PutMapping("/{id}/remove-charging-outlet")
-    public ResponseEntity<?> removeChargingOutlet(@PathVariable Long id, @RequestParam ChargingOutlet chargingOutlet) {
+    public ResponseEntity<?> removeChargingOutlet(@PathVariable Long id, @RequestBody ChargingOutlet chargingOutlet) {
         try{
             ChargingStation updatedStation = chargingStationService.removeChargingOutlet(id, chargingOutlet);
             return ResponseEntity.ok(updatedStation);
@@ -115,5 +127,16 @@ public class ChargingStationController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/ChargingOutlets/{stationId}")
+    public ResponseEntity<?> getChargingOutletsByStationId(@PathVariable Long stationId) {
+        try {
+            List<ChargingOutlet> outlets = chargingStationService.getChargingOutletsByStationId(stationId);
+            return ResponseEntity.ok(outlets);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
 
 }

@@ -7,24 +7,27 @@ import jakarta.persistence.*;
 @Entity
 @DiscriminatorValue("CONSUMER")
 public class Consumer extends User {
-	private int wallet = 0;
+	private double wallet = 0;
+	
+
 
 	@JsonIgnore
 	@OneToMany(mappedBy = "consumer")
 	private List<Reservation> reservations;
 
-	public int getWallet() {
+	public double getWallet() {
 		return wallet;
 	}
 	public List<Reservation> getReservations() {
 		return reservations;
 	}
 
-	public void setWallet(int wallet) {
+	public void setWallet(double wallet) {
 		this.wallet = wallet;
 	}
 	public void setReservations(List<Reservation> reservations) {
 		this.reservations = reservations;
 	}
+
 	
 }
