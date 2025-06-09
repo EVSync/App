@@ -10,7 +10,7 @@ services:
       - /app/node_modules
     environment:
       - NODE_ENV=development
-      - NEXT_PUBLIC_URL=http://backend:8080
+      - NEXT_PUBLIC_URL=http://192.168.160.14:8080
     depends_on:
       - backend
     networks:
