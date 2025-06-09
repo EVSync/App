@@ -6,8 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import tqs.evsync.backend.model.ChargingSession;
 import tqs.evsync.backend.model.Consumer;
 import tqs.evsync.backend.repository.ConsumerRepository;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
@@ -26,6 +30,22 @@ public class ConsumerController {
     @GetMapping
     public ResponseEntity<?> getAllConsumers() {
         return ResponseEntity.ok(consumerRepository.findAll());
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<Consumer> signup(@RequestBody Consumer incoming) {
+        // you may want to hash the password!
+        Consumer saved = consumerRepository.save(incoming);
+        return ResponseEntity.ok(saved);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Consumer> login(@RequestBody Consumer creds) {
+        return consumerRepository
+            .findByEmail(creds.getEmail())
+            .filter(c -> c.getPassword().equals(creds.getPassword()))
+            .map(c -> ResponseEntity.ok(c))
+            .orElse(ResponseEntity.status(401).build());
     }
 
     @GetMapping("/{id}")
@@ -92,4 +112,16 @@ public class ConsumerController {
         }
         return ResponseEntity.ok(optionalConsumer.get().getWallet());
     }
+
+    @GetMapping("/{id}/reservations")
+    public ResponseEntity<?> getReservationsByConsumerId(@PathVariable Long id) {
+        Optional<Consumer> optionalConsumer = consumerRepository.findById(id);
+        if (optionalConsumer.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Consumer consumer = optionalConsumer.get();
+        return ResponseEntity.ok(consumer.getReservations());
+    }
+
+
 }

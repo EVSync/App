@@ -12,8 +12,9 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { API_BASE_URL } from "@/lib/api";
 
-// Fix Leaflet’s default icon paths
+// ── Fix Leaflet’s default icon paths ──
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -24,84 +25,134 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-export default function AveiroMap({ operatorId }) {
+export default function AveiroMap({ operatorId, consumerId }) {
   const router = useRouter();
 
-  // Shared state:
-  const [stations, setStations] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // ── Shared state ──
+  const [stations, setStations]           = useState([]);
+  const [loading, setLoading]             = useState(true);
   const [selectedStation, setSelectedStation] = useState(null);
 
-  // Operator‐only state:
-  const [isAdding, setIsAdding] = useState(false);
-
-  // Consumer‐only state:
-  const [outlets, setOutlets] = useState([]);
+  // ── Consumer-only state ──
+  const [outlets, setOutlets]             = useState([]);
   const [loadingOutlets, setLoadingOutlets] = useState(false);
   const [reservationMsg, setReservationMsg] = useState("");
+  const [activeSession, setActiveSession]   = useState(null);
   const [chosenOutletId, setChosenOutletId] = useState("");
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [startTime, setStartTime]           = useState("");
+  const [endTime, setEndTime]               = useState("");
 
-  // 1) On mount, decide which fetch to do—operator vs consumer:
+  // 1) Load stations & session
   useEffect(() => {
-    async function fetchStations() {
-      try {
-        if (operatorId) {
-          // Operator mode: fetch only stations for that operator
-          const resp = await fetch(
-            `http://localhost:8080/charging-station/operator/${operatorId}`
-          );
-          if (!resp.ok) throw new Error("Failed to load operator’s stations");
-          const data = await resp.json();
-          setStations(data);
-        } else {
-          // Consumer mode: fetch all stations, then filter AVAILABLE
-          const resp = await fetch("http://localhost:8080/charging-station");
-          if (!resp.ok) throw new Error("Failed to load stations");
-          const data = await resp.json();
-          const available = data.filter((s) => s.status === "AVAILABLE");
-          setStations(available);
-        }
-      } catch (err) {
-        console.error(err);
-        setStations([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchStations();
-  }, [operatorId]);
+    fetch(API_BASE_URL.CHARGING_STATION)
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((data) => {
+        setStations(operatorId ? data : data.filter((s) => s.status === "AVAILABLE"));
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
 
-  // 2) When a station is clicked (selectedStation changed), act accordingly:
+    if (!operatorId && consumerId) {
+      fetch(`${API_BASE_URL.SESSION}/active/${consumerId}`)
+        .then((r) => (r.ok ? r.json() : Promise.reject()))
+        .then(setActiveSession)
+        .catch(() => setActiveSession(null));
+    }
+  }, [operatorId, consumerId]);
+
+  // 2) Load outlets for consumer
   useEffect(() => {
     if (!selectedStation || operatorId) return;
-
-    // Consumer clicked a station: fetch its AVAILABLE outlets
     setLoadingOutlets(true);
-    (async () => {
-      try {
-        const resp = await fetch(
-          `http://localhost:8080/charging-station/ChargingOutlets/${selectedStation.id}`
-        );
-        if (!resp.ok) throw new Error("Failed to load outlets");
-        const data = await resp.json();
-        const availableOutlets = data.filter((o) => o.status === "AVAILABLE");
-        setOutlets(availableOutlets);
-      } catch (err) {
-        console.error("Error fetching outlets:", err);
-        setOutlets([]);
-      } finally {
-        setLoadingOutlets(false);
-      }
-    })();
+    fetch(API_BASE_URL.CHARGING_STATION_OUTLETS(selectedStation.id))
+      .then((r) => r.ok ? r.json() : Promise.reject())
+      .then((data) => setOutlets(data.filter((o) => o.status === "AVAILABLE")))
+      .catch(console.error)
+      .finally(() => setLoadingOutlets(false));
   }, [selectedStation, operatorId]);
 
-  // 3) Operator: clicking on the map background to add a new station
-  function StationClickHandler() {
+  // 3) Reservation via DB
+  async function handleReserveApi(e) {
+    e.preventDefault();
+    setReservationMsg("");
+    if (!consumerId) {
+      alert("Please log in as consumer first.");
+      return;
+    }
+    if (!chosenOutletId || !startTime || !endTime) {
+      setReservationMsg("All fields are required.");
+      return;
+    }
+    try {
+      const url = `${API_BASE_URL.RESERVATION}?consumerId=${consumerId}`;
+      const body = {
+        stationId: selectedStation.id,
+        outletId: Number(chosenOutletId),
+        startTime,
+        endTime,
+      };
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      setReservationMsg("Reservation saved!");
+      setChosenOutletId("");
+      setStartTime("");
+      setEndTime("");
+    } catch (err) {
+      console.error("Reservation failed", err);
+      setReservationMsg("Reservation failed");
+    }
+  }
+
+  // 4) Session start
+  async function handleStartSessionApi(oId) {
+    if (!consumerId) {
+      alert("Please log in as consumer first.");
+      return;
+    }
+    if (activeSession && activeSession.outletId !== oId) {
+      alert("You already have a session in progress.");
+      return;
+    }
+    try {
+      const body = { consumerId, stationId: selectedStation.id, outletId: Number(oId) };
+      const resp = await fetch(API_BASE_URL.SESSION, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      const session = await resp.json();
+      setActiveSession(session);
+    } catch (err) {
+      console.error("Start session failed", err);
+      alert("Could not start session");
+    }
+  }
+
+  // 5) Session end
+  async function handleEndSessionApi() {
+    if (!activeSession) return;
+    try {
+      const resp = await fetch(`${API_BASE_URL.SESSION}/${activeSession.id}`, {
+        method: "DELETE",
+      });
+      if (!resp.ok) throw new Error(await resp.text());
+      setActiveSession(null);
+    } catch (err) {
+      console.error("End session failed", err);
+      alert("Could not end session");
+    }
+  }
+
+  // 6) Operator click
+  function OperatorMapClick() {
     useMapEvents({
-      click(e) {
-        if (!isAdding) return;
+      click: (e) => {
+        if (!operatorId) return;
         const { lat, lng } = e.latlng;
         router.push(
           `/station/new?operatorId=${operatorId}&lat=${lat}&lon=${lng}`
@@ -111,191 +162,169 @@ export default function AveiroMap({ operatorId }) {
     return null;
   }
 
-  // 4) Consumer: handle reservation submission
-  function handleReserve(e) {
-    e.preventDefault();
-    setReservationMsg("");
-
-    if (!chosenOutletId || !startTime || !endTime) {
-      setReservationMsg("All fields are required.");
-      return;
-    }
-    // Store in localStorage
-    const consumerId = localStorage.getItem("consumerId") || "guest";
-    const newRes = {
-      id: Date.now(),
-      consumerId,
-      stationId: selectedStation.id,
-      outletId: Number(chosenOutletId),
-      startTime,
-      endTime,
-    };
-    const stored = JSON.parse(localStorage.getItem("reservations") || "[]");
-    stored.push(newRes);
-    localStorage.setItem("reservations", JSON.stringify(stored));
-    setReservationMsg("Reservation saved!");
-    setChosenOutletId("");
-    setStartTime("");
-    setEndTime("");
-  }
-
   if (loading) {
-    return (
-      <div className="flex h-full w-full items-center justify-center">
-        <p className="text-lg">Loading map…</p>
-      </div>
-    );
+    return <div className="flex h-full w-full items-center justify-center"><p>Loading…</p></div>;
   }
 
   return (
-    <div className="h-full w-full">
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-100 border-b">
-        <h2 className="text-xl font-semibold">
-          {operatorId
-            ? `Operator #${operatorId} – Manage Stations`
-            : "Consumer View – Reserve a Slot"}
-        </h2>
+    <MapContainer center={[40.6405, -8.6538]} zoom={13} className="h-full w-full">
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-        {operatorId && (
-          <button
-            onClick={() => setIsAdding((prev) => !prev)}
-            className={`px-3 py-1 rounded text-white ${
-              isAdding ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"
-            } transition`}
-          >
-            {isAdding ? "Cancel Add" : "Add Station"}
-          </button>
-        )}
-      </div>
+      {stations.map((s) => (
+        <Marker key={s.id} position={[s.latitude, s.longitude]}
+          eventHandlers={{ click: () => setSelectedStation(s) }} />
+      ))}
 
-      <MapContainer
-        center={[40.6405, -8.6538]}
-        zoom={13}
-        className="h-[calc(100vh-3rem)] w-full"
-      >
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      {operatorId && <OperatorMapClick />}
 
-        {stations.map((st) => (
-          <Marker
-            key={st.id}
-            position={[st.latitude, st.longitude]}
-            eventHandlers={{
-              click: () => {
-                setSelectedStation(st);
-                setReservationMsg("");
-              },
-            }}
-          >
-            <Popup>
-              <div className="w-64">
-                <p className="font-bold">
-                  Station #{st.id} ({st.latitude.toFixed(5)},{" "}
-                  {st.longitude.toFixed(5)})
+      {selectedStation && (
+        <Popup position={[selectedStation.latitude, selectedStation.longitude]}
+          onClose={() => {
+            setSelectedStation(null);
+            setOutlets([]);
+            setReservationMsg("");
+          }}>
+          <div className="w-64">
+            <h3 className="text-lg font-semibold mb-2">Station #{selectedStation.id}</h3>
+
+            {/* Operator UI */}
+            {operatorId ? (
+              <div className="space-y-4">
+                <p>
+                  <strong>Coords:</strong> {selectedStation.latitude.toFixed(5)}, {selectedStation.longitude.toFixed(5)}
                 </p>
-                <p>Status: {st.status}</p>
-
-                {operatorId ? (
-                  // Operator popup content:
-                  <>
-                    <p className="text-sm text-gray-600 mt-2">
-                      (Click marker to configure…)
+                <p><strong>Status:</strong> {selectedStation.status}</p>
+                <p><strong>Operator ID:</strong> {selectedStation.operator?.id ?? operatorId}</p>
+                <button
+                  onClick={() =>
+                    router.push(`/station?stationId=${selectedStation.id}&operatorId=${operatorId}`)
+                  }
+                  className="w-full bg-blue-600 text-white px-3 py-1 rounded"
+                >
+                  Configure Station
+                </button>
+              </div>
+            ) : (
+              /* Consumer UI */
+              <>
+                {loadingOutlets ? (
+                  <p>Loading outlets…</p>
+                ) : activeSession && activeSession.stationId === selectedStation.id ? (
+                  <div className="space-y-2">
+                    <p className="text-green-700 font-medium">
+                      <strong>Session in progress</strong><br />
+                      Outlet #{activeSession.outletId}<br />
+                      Started: {new Date(activeSession.startTime).toLocaleString()}
                     </p>
                     <button
-                      onClick={() =>
-                        router.push(
-                          `/station?stationId=${st.id}&operatorId=${operatorId}`
-                        )
-                      }
-                      className="mt-2 w-full bg-blue-600 text-white py-1 rounded hover:bg-blue-700 transition text-sm"
+                      onClick={handleEndSessionApi}
+                      className="w-full bg-red-600 text-white px-3 py-1 rounded"
                     >
-                      Configure Station
+                      End Session
                     </button>
-                  </>
-                ) : (
-                  // Consumer popup content:
-                  <>
-                    {loadingOutlets ? (
-                      <p className="mt-2 text-sm">Loading outlets…</p>
-                    ) : outlets.length > 0 ? (
-                      <form onSubmit={handleReserve} className="space-y-2 mt-2">
-                        <div>
-                          <label
-                            htmlFor="outletSelect"
-                            className="block text-sm text-gray-700"
-                          >
-                            Choose Outlet
-                          </label>
-                          <select
-                            id="outletSelect"
-                            className="w-full border px-2 py-1 rounded focus:outline-none"
-                            value={chosenOutletId}
-                            onChange={(e) => setChosenOutletId(e.target.value)}
-                          >
-                            <option value="">-- Select --</option>
-                            {outlets.map((o) => (
-                              <option key={o.id} value={o.id}>
-                                Outlet #{o.id} ({o.maxPower} kW)
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label
-                            htmlFor="startTime"
-                            className="block text-sm text-gray-700"
-                          >
-                            Start Time
-                          </label>
-                          <input
-                            id="startTime"
-                            type="datetime-local"
-                            className="w-full border px-2 py-1 rounded focus:outline-none"
-                            value={startTime}
-                            onChange={(e) => setStartTime(e.target.value)}
-                          />
-                        </div>
-                        <div>
-                          <label
-                            htmlFor="endTime"
-                            className="block text-sm text-gray-700"
-                          >
-                            End Time
-                          </label>
-                          <input
-                            id="endTime"
-                            type="datetime-local"
-                            className="w-full border px-2 py-1 rounded focus:outline-none"
-                            value={endTime}
-                            onChange={(e) => setEndTime(e.target.value)}
-                          />
-                        </div>
-                        {reservationMsg && (
-                          <p className="text-green-600 text-sm">
-                            {reservationMsg}
-                          </p>
-                        )}
-                        <button
-                          type="submit"
-                          className="w-full bg-green-600 text-white py-1 rounded hover:bg-green-700 transition text-sm"
-                        >
-                          Reserve
-                        </button>
-                      </form>
-                    ) : (
-                      <p className="mt-2 text-sm text-gray-600">
-                        No available outlets.
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+                  </div>
+                ) : outlets.length > 0 ? (
+                  <div className="space-y-4">
+                    {/* Start Session */}
+                    <div>
+                      <label className="block text-sm text-gray-700 mb-1">
+                        Select an outlet to start session:
+                      </label>
+                      <select
+                        className="w-full border px-2 py-1 rounded"
+                        value={chosenOutletId}
+                        onChange={(e) => setChosenOutletId(e.target.value)}
+                      >
+                        <option value="">-- Select Outlet --</option>
+                        {outlets.map((o) => (
+                          <option key={o.id} value={o.id}>
+                            Outlet #{o.id} ({o.maxPower} kW)
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        onClick={() => {
+                          if (!chosenOutletId) {
+                            alert("Choose an outlet first.");
+                          } else {
+                            handleStartSessionApi(chosenOutletId);
+                          }
+                        }}
+                        className="mt-2 w-full bg-orange-600 text-white px-3 py-1 rounded"
+                      >
+                        Start Session
+                      </button>
+                    </div>
 
-        {/* Operator’s “click‐to‐add‐station” handler */}
-        {operatorId && isAdding && <StationClickHandler />}
-      </MapContainer>
-    </div>
+                    {/* Reservation form */}
+                    <form onSubmit={handleReserveApi} className="space-y-2">
+                      <p className="font-medium">Make a reservation</p>
+
+                      <div>
+                        <label htmlFor="resOutlet" className="block text-sm text-gray-700">
+                          Choose Outlet
+                        </label>
+                        <select
+                          id="resOutlet"
+                          className="w-full border px-2 py-1 rounded"
+                          value={chosenOutletId}
+                          onChange={(e) => setChosenOutletId(e.target.value)}
+                        >
+                          <option value="">-- Select Outlet --</option>
+                          {outlets.map((o) => (
+                            <option key={o.id} value={o.id}>
+                              Outlet #{o.id} ({o.maxPower} kW)
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label htmlFor="resStartTime" className="block text-sm text-gray-700">
+                          Start Time
+                        </label>
+                        <input
+                          id="resStartTime"
+                          type="datetime-local"
+                          className="w-full border px-2 py-1 rounded"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label htmlFor="resEndTime" className="block text-sm text-gray-700">
+                          End Time
+                        </label>
+                        <input
+                          id="resEndTime"
+                          type="datetime-local"
+                          className="w-full border px-2 py-1 rounded"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                        />
+                      </div>
+
+                      {reservationMsg && (
+                        <p className="text-green-600 text-sm">{reservationMsg}</p>
+                      )}
+
+                      <button
+                        type="submit"
+                        className="w-full bg-green-600 text-white px-3 py-1 rounded"
+                      >
+                        Reserve
+                      </button>
+                    </form>
+                  </div>
+                ) : (
+                  <p className="text-gray-600 text-sm">No available outlets.</p>
+                )}
+              </>
+            )}
+          </div>
+        </Popup>
+      )}
+    </MapContainer>
   );
 }

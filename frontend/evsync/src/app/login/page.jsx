@@ -1,49 +1,50 @@
 // src/app/login/page.jsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { API_BASE_URL } from "@/lib/api";
 
 export default function ConsumerLogin() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // If already “logged in” (has token), redirect to /reservations
-    const consumerId = localStorage.getItem("consumerId");
-    if (consumerId) {
-      router.push("/reservations");
-    }
-  }, [router]);
-
-  function handleLogin(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setErrorMsg("");
+    setLoading(true);
+    try {
+      // Always create (or authenticate) consumer on the fly
+      const resp = await fetch(`${API_BASE_URL.CONSUMER}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(text || resp.statusText);
+      }
 
-    // Read saved users from localStorage
-    const usersJson = localStorage.getItem("consumers") || "[]";
-    const users = JSON.parse(usersJson);
-
-    const found = users.find((u) => u.email === email.trim() && u.password === password.trim());
-    if (!found) {
-      setErrorMsg("Invalid email or password.");
-      return;
+      const consumer = await resp.json();
+      // Navigate to map with consumerId in query
+      router.push(`/map?consumerId=${consumer.id}`);
+    } catch (err) {
+      console.error("Consumer creation failed", err);
+      setErrorMsg(err.message || "Failed to create consumer");
+    } finally {
+      setLoading(false);
     }
-
-    // “Log in” by saving consumerId (just use the timestamp-based id)
-    localStorage.setItem("consumerId", found.id);
-    router.push("/reservations");
   }
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-100 px-4">
       <div className="w-full max-w-md bg-white p-6 rounded-lg shadow-md">
-        <h2 className="text-2xl font-semibold mb-4 text-center">Consumer Login</h2>
+        <h2 className="text-2xl font-semibold mb-4 text-center">Enter as Consumer</h2>
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-gray-700 mb-1">
               Email
@@ -55,6 +56,7 @@ export default function ConsumerLogin() {
               className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={loading}
             />
           </div>
 
@@ -69,6 +71,7 @@ export default function ConsumerLogin() {
               className="w-full border px-3 py-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
             />
           </div>
 
@@ -76,18 +79,12 @@ export default function ConsumerLogin() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
+            disabled={loading}
+            className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition"
           >
-            Log In
+            {loading ? "Please wait..." : "Enter Map"}
           </button>
         </form>
-
-        <p className="mt-4 text-center text-gray-600">
-          Don’t have an account?{" "}
-          <Link href="/signup" className="text-blue-600 hover:underline">
-            Register here
-          </Link>
-        </p>
       </div>
     </div>
   );
