@@ -48,7 +48,7 @@ export default function CreateStationPage() {
         status: "AVAILABLE",
         operator: { id: Number(operatorId) },
       };
-      const resp = await fetch("http://localhost:8080/charging-station", {
+      const resp = await fetch(`${API_BASE_URL.CHARGING_STATION}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
