@@ -15,7 +15,7 @@ services:
       - backend
     networks:
       - app-network
-
+  
 
   mysql:
     image: mysql:8.0
@@ -88,6 +88,7 @@ services:
     networks:
       - app-network
     entrypoint: ["sleep", "infinity"]
+
 
 volumes:
   mysql-data:
